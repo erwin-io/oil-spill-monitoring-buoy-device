@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "note": "Only files listed here are uploaded. Runtime module additions must update this manifest and pass CI.",
+  "files": [
+    "boot.py",
+    "config.py",
+    "app/__init__.py",
+    "app/controller.py",
+    "drivers/__init__.py",
+    "drivers/unbound.py",
+    "services/__init__.py",
+    "services/api_client.py",
+    "services/contracts.py",
+    "services/health.py",
+    "services/pairing.py",
+    "services/telemetry.py",
+    "main.py"
+  ]
+}
