@@ -1,0 +1,1 @@
+"""Firmware orchestration (hardware-independent)."""

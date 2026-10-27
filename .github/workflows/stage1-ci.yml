@@ -1,0 +1,23 @@
+name: Firmware Stage 1 Desktop Checks
+on:
+  push:
+    branches: ["feature/module-d-stage1-foundation"]
+  pull_request:
+    branches: ["main"]
+permissions:
+  contents: read
+jobs:
+  desktop-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile Python modules
+        run: python -m compileall -q boot.py main.py config.py app drivers services tests tools
+      - name: Run offline unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Run fake-device example (no network)
+        run: python tools/simulate.py
