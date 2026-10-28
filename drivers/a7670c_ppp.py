@@ -25,7 +25,7 @@ class ATLineTerminal:
                     try:
                         return raw.decode("ascii")
                     except UnicodeError:
-                        raise CellularError("Invalid modem response") from None
+                        raise CellularError("Invalid modem response")
             available=self.uart.any()
             if available:
                 chunk=self.uart.read(min(available,96))

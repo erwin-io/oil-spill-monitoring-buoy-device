@@ -145,6 +145,19 @@ class FakeHttps:
         return {"status":201,"body":{"accepted":True}}
 
 class RuntimeTests(unittest.TestCase):
+
+    def test_no_micro_python_exception_chaining_in_boot_modules(self):
+        """MicroPython warns when 'raise ... from None' is executed."""
+        import pathlib
+        root=pathlib.Path(__file__).resolve().parents[1]
+        for name in (
+                "services/device_identity.py",
+                "services/verified_https.py",
+                "services/setup_portal.py",
+                "drivers/a7670c_ppp.py"):
+            with self.subTest(name=name):
+                self.assertNotIn(" from None", (root/name).read_text())
+
     def test_resident_loop_runs_cellular_without_manual_commands(self):
         import main
         class Service:

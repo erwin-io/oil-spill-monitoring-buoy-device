@@ -25,7 +25,7 @@ def _unquote(value):
             try:
                 out.append(chr(int(value[i + 1:i + 3], 16)))
             except ValueError:
-                raise ValueError("Bad escape sequence") from None
+                raise ValueError("Bad escape sequence")
             i += 3
         else:
             out.append(value[i])
@@ -42,7 +42,7 @@ def parse_form(body):
     try:
         fields = body.decode("ascii").split("&")
     except UnicodeError:
-        raise ValueError("Form must be ASCII") from None
+        raise ValueError("Form must be ASCII")
     if len(fields) != 3:
         raise ValueError("Unexpected form fields")
     result = {}

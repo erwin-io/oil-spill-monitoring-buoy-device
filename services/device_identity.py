@@ -21,7 +21,7 @@ def load_identity(path=DEFAULT_PATH):
                 raise IdentityNotProvisioned("Identity record too large")
         data=json.loads(body)
     except (OSError,ValueError):
-        raise IdentityNotProvisioned("Identity not provisioned/invalid") from None
+        raise IdentityNotProvisioned("Identity not provisioned/invalid")
     if not isinstance(data,dict) or set(data)!={"schema","deviceId","deviceKey"} or data["schema"]!=1:
         raise IdentityNotProvisioned("Identity not provisioned/invalid")
     device_id=data["deviceId"]

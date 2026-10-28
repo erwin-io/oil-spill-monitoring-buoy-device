@@ -13,7 +13,7 @@ def load_cloud_profile(path="/blueguard-cloud.json"):
         with open(path) as f:
             profile=json.load(f)
     except (OSError,ValueError):
-        raise TransportError("Cloud TLS profile is missing/invalid") from None
+        raise TransportError("Cloud TLS profile is missing/invalid")
     if not isinstance(profile,dict) or set(profile)!={"schema","host","caDerPath"} or profile["schema"]!=1:
         raise TransportError("Unsupported cloud TLS profile")
     host=profile["host"]
@@ -51,7 +51,7 @@ def _read_chunked(stream,buf,limit):
         try:
             size=int(size_text.split(b";",1)[0],16)
         except ValueError:
-            raise TransportError("Invalid chunk length") from None
+            raise TransportError("Invalid chunk length")
         if size<0 or size+len(output)>limit:
             raise TransportError("Chunked response too large")
         while len(buf)<size+2:
@@ -158,7 +158,7 @@ class VerifiedHttpsTransport:
             raise
         except Exception:
             # Includes TLS/hostname rejection, DNS and unexpected EOF.
-            raise TransportError("Authenticated HTTPS request failed") from None
+            raise TransportError("Authenticated HTTPS request failed")
         finally:
             if wrapped is not None:
                 try:wrapped.close()
