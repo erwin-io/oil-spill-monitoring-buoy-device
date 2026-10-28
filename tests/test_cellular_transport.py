@@ -115,6 +115,15 @@ class TLSTests(unittest.TestCase):
         result=transport.request("GET","/api/v1/device/config",{},None)
         self.assertEqual(result["body"]["state"],"CONFIRMED")
 
+    def test_nested_api_error_code_is_preserved(self):
+        response=b'{"error":{"code":"CLAIM_NOT_PENDING"}}'
+        wire=(b"HTTP/1.1 409 Conflict\r\nContent-Length: "+
+              str(len(response)).encode()+b"\r\n\r\n"+response)
+        net=FakeSockets(wire)
+        transport=VerifiedHttpsTransport("api.example.com",b"x"*200,net,FakeTls())
+        result=transport.request("POST","/api/v1/device/pairing-confirmations",{}, {})
+        self.assertEqual(result["code"],"CLAIM_NOT_PENDING")
+
     def test_rejects_redirect(self):
         net=FakeSockets(b"HTTP/1.1 302 Found\r\nContent-Length: 0\r\n\r\n")
         transport=VerifiedHttpsTransport("api.example.com",b"x"*200,net,FakeTls())

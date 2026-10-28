@@ -7,7 +7,7 @@ physical button events may arm a challenge. No raw nonce/secret in status.
 from services.pairing import PairingGate
 
 _WAIT_MS=5*60*1000
-_CONFIRM_INTERVAL_MS=3000
+_CONFIRM_INTERVAL_MS=8000
 
 
 def _token(value,max_length=128):

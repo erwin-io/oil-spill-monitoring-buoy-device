@@ -39,7 +39,7 @@ class PairingTests(unittest.TestCase):
         self.assertEqual(self.pair.snapshot()["state"],"WAITING_FOR_APP_CLAIM")
         self.assertNotIn("nonce",str(self.pair.snapshot()))
         self.assertEqual(self.pair.tick(),"WAITING_FOR_APP_CLAIM")
-        self.clock.ms+=3000
+        self.clock.ms+=8000
         self.assertEqual(self.pair.tick(),"CONFIRMED")
         self.assertFalse(self.pair.physically_pressed())
         self.assertEqual(self.client.calls[0][1],"/api/v1/device/pairing-challenges")

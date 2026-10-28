@@ -150,7 +150,10 @@ class VerifiedHttpsTransport:
             result=json.loads(body.decode()) if body else {}
             if not isinstance(result,dict):
                 raise TransportError("Unexpected API JSON")
-            return {"status":code,"body":result,"code":result.get("code")}
+            return {"status":code,"body":result,
+                    "code":result.get("code") or (
+                        result.get("error",{}).get("code")
+                        if isinstance(result.get("error"),dict) else None)}
         except TransportError:
             raise
         except Exception:
