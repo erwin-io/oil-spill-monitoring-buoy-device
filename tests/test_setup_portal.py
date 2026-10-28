@@ -105,6 +105,15 @@ class StoreTests(unittest.TestCase):
         self.store = ProvisioningStore(str(self.root / "settings.json"),
                                        str(self.root / "access.key"))
 
+    def test_micropython_errno_args_fallback(self):
+        from services.provisioning import _is_missing
+        class MicroPyStyleError(OSError):
+            @property
+            def errno(self):
+                return None
+        self.assertTrue(_is_missing(MicroPyStyleError(2)))
+        self.assertFalse(_is_missing(MicroPyStyleError(5)))
+
     def test_first_boot_unprovisioned(self):
         self.assertIsNone(self.store.load())
 

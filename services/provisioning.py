@@ -6,6 +6,15 @@ import os
 SETUP_FILE = "/blueguard-setup.json"
 KEY_FILE = "/blueguard-ap-key.txt"
 
+def _is_missing(exc):
+    """MicroPython OSError often exposes errno in args[0], not .errno."""
+    code = getattr(exc, "errno", None)
+    if code is None:
+        args = getattr(exc, "args", ())
+        code = args[0] if args else None
+    return code == 2
+
+
 
 def validate_settings(data):
     if not isinstance(data, dict) or set(data) != {"label", "apn"}:
@@ -32,7 +41,7 @@ class ProvisioningStore:
             with open(self.path, "r") as f:
                 record = json.load(f)
         except OSError as exc:
-            if getattr(exc, "errno", None) == 2:
+            if _is_missing(exc):
                 return None
             raise
         if not isinstance(record, dict) or record.get("schema") != 1:
@@ -65,7 +74,7 @@ class ProvisioningStore:
                 raise ValueError("Bad stored AP password")
             return password
         except OSError as exc:
-            if getattr(exc, "errno", None) != 2:
+            if not _is_missing(exc):
                 raise
         password = binascii.hexlify(os.urandom(8)).decode()
         temp = self.key_path + ".new"
