@@ -11,7 +11,8 @@
 ## Dependency architecture
 
     boot.py (passive)
-    main.py -> app.controller -> config.validate_config
+    main.py -> app.controller -> config.validate_config (cloud only)
+                             -> config.validate_hardware_config (board + A7670C)
                              -> drivers.unbound (no GPIO)
     services.telemetry -> injected measurement_source / clock / id_generator
     services.health    -> injected health_source / clock / id_generator
@@ -28,8 +29,10 @@ Shared services consume small duck-typed methods: set_safe_outputs(), read_measu
 2. main.run() supplies an UnboundBoard by default, whose set_safe_outputs() returns false rather than guessing GPIOs.
 3. The controller requests the fail-safe output state **before** validating configuration.
 4. Without verified board binding, the state is UNCONFIGURED and no network, sensing or scheduling runs.
-5. With a fake safe board and validated public config, the state is SAFE_IDLE; this is a software-only result.
-6. Initialization exceptions and invalid configuration transition to FAULT without enabling operations.
+5. With a fake safe board and separately validated cloud and hardware configuration, the state is SAFE_IDLE; this is a software-only result.
+6. Initialization exceptions, invalid cloud configuration or invalid hardware configuration transition to FAULT without enabling operations.
+
+The centralized config.py holds BOARD_CONFIG and A7670C_CONFIG, separate from the unchanged DEFAULT_CONFIG cloud schema. GPIO pins are unassigned, and enabling the A7670C is rejected until its actual driver and physical wiring are verified. Config validation does not initialize UARTs or pins.
 
 Physical fail-safe actuator wiring, modem power delivery, RTC, microSD, secure storage and real watchdog operation are *not verified*.
 
