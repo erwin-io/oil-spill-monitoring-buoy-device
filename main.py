@@ -10,6 +10,7 @@ from drivers.unbound import UnboundBoard
 
 RUNTIME = None
 PORTAL = None
+CLOUD = None
 
 
 def run(board=None, settings=None, hardware=None):
@@ -30,19 +31,22 @@ def status():
     snapshot = RUNTIME.snapshot()
     snapshot["setupAp"] = ("ACTIVE" if PORTAL is not None and PORTAL.active
                            else "INACTIVE")
+    if CLOUD is not None:
+        snapshot.update(CLOUD.snapshot())
     return snapshot
 
 
 def serve_forever(board=None, settings=None, hardware=None, clock=None,
                   output=print, max_ticks=None, setup_portal=None,
-                  pairing_service=None, pair_input=None):
+                  pairing_service=None, pair_input=None, cloud_service=None):
     """Run the Module D heartbeat and scheduler. Ctrl+C releases the REPL.
 
     max_ticks is for finite deterministic tests only; normal boot is resident.
     """
-    global RUNTIME, PORTAL
+    global RUNTIME, PORTAL, CLOUD
     RUNTIME = None
     PORTAL = None
+    CLOUD = None
     if settings is None:
         settings = default_config()
     startup = run(board=board, settings=settings, hardware=hardware)
@@ -80,12 +84,31 @@ def serve_forever(board=None, settings=None, hardware=None, clock=None,
                 setup_portal.close()
             except Exception:
                 pass
+    if cloud_service is None:
+        import sys
+        if sys.implementation.name == "micropython":
+            try:
+                from services.cellular_runtime import CellularService
+                from services.provisioning import ProvisioningStore
+                cloud_service = CellularService(clock, ProvisioningStore())
+            except Exception as exc:
+                output("BlueGuard cellular setup unavailable | " + type(exc).__name__)
+    CLOUD = cloud_service
+    cloud_status = None
     if (pairing_service is None) != (pair_input is None):
         # Never activate a pairing service without a genuine physical input.
         raise ValueError("Pairing requires physical input and certified transport")
     loops = 0
     try:
         while True:
+            if CLOUD is not None:
+                try:
+                    CLOUD.tick()
+                    if CLOUD.status != cloud_status:
+                        cloud_status = CLOUD.status
+                        output("BlueGuard cellular | " + cloud_status)
+                except Exception as exc:
+                    output("BlueGuard cellular fault | " + type(exc).__name__)
             if pairing_service is not None:
                 # Explicitly attached verified GPIO/button and cloud transport.
                 if pair_input.poll():

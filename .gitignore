@@ -29,3 +29,7 @@ venv/
 out/
 *.joblib
 *.pkl
+
+blueguard-identity.json
+blueguard-cloud.json
+blueguard-root-ca.der

@@ -76,3 +76,8 @@ services/cloud_pairing.py implements the strict server challenge/confirmation st
 ## Production pairing integration boundary
 
 The firmware includes the new physical_pair_button, device_identity and cloud_pairing modules. The resident firmware loop supports injected physical button + pairing service but does NOT construct these by default: it still needs real certificate-verified A7670C HTTPS and factory-provisioned device ID/key. The PAIR input is proposed on GPIO15; never substitute SETUP or EN/reset. The identity file /blueguard-identity.json is a local factory-only record with schema=1, deviceId and deviceKey, excluded from firmware Git/deploy manifest and setup AP. Plain MicroPython flash storage is not itself secure: production secure boot/flash encryption and protected provisioning are pending. No fake keys or fake server confirmations are allowed.
+
+
+## Autonomous LTE and app pairing
+
+The firmware now includes UART-to-PPP cellular dial, certificate/hostname-verifying HTTPS, physical PAIR input, cloud challenge/confirmation and actual health posting, with boot-time automatic initialization after factory device identity and reviewed trust anchor provisioning. Hardware acceptance is pending. See docs/CELLULAR_PAIRING.md.

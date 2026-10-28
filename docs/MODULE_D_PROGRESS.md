@@ -54,3 +54,8 @@ services/cloud_pairing.py implements device-authenticated challenge initiation o
 ## Physical button and device-identity module
 
 Implemented debounced active-low PAIR input adapter with boot-held safety and strict factory identity parser. The resident loop polls CloudPairing only when both physical button and trusted transport service are injected. Default firmware cannot yet initialize A7670C cellular HTTPS or load its production credentials securely, so actual mobile pairing remains blocked. This is NOT acceptance of D41–44.
+
+
+## LTE + cloud live implementation increment
+
+Added UART PPP modem driver, CA/hostname-verified MicroPython SSL HTTPS transport, autonomous cellular runtime, real health uploading, factory provisioning CLI, and physical PAIR integration. All require physical board testing and valid backend credentials before checklist completion. The default local runtime stays active if credentials or cellular connection are unavailable.

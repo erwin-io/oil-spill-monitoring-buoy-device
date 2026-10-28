@@ -34,3 +34,6 @@ tests/test_module_e.py covers AS7341 driver with mocked I2C, dark-subtraction, U
 
 
 Tests test_pair_button.py validate physical debouncing, boot-held button safety, factory identity validation and refusal to run pairing without a physical source. Desktop evidence only.
+
+
+Additional offline tests exercise the UART LTE registration/APN dial and PPP, HTTPS TLS cert/hostname parameters and redirect refusals, HTTP response framing, and missing factory credentials. Hardware pairing acceptance must still be completed using the actual ESP32 and mobile app.
