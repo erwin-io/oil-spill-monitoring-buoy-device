@@ -55,3 +55,19 @@ Documentation: [Architecture](docs/ARCHITECTURE.md) · [Module D progress](docs/
 When the ESP32-S3 is unprovisioned, it **automatically advertises a short-lived, WPA2-protected BlueGuard-XXXXXX hotspot** on MicroPython boot. Connect your phone, enter the unique AP password printed to the physical USB serial console for this development prototype, and browse http://192.168.4.1/. No F5 or command is needed to start the AP. Local setup currently stores a device label and SIM-provider APN only, without sending data to cloud or claiming ownership.
 
 The portal closes after 15 minutes or shortly after successful save. Once provisioned, automatic AP startup is disabled; verified physical SETUP re-entry and per-device factory credential labeling are still necessary before production shipping. The APN is **not yet sent to an actual A7670C modem**. See [Setup AP guide](docs/SETUP_AP.md).
+
+
+## Module E — optics and edge ML software
+
+Software is in drivers/as7341.py, services/optics.py, services/calibration.py and services/edge_model.py. Hardware is NOT automatically energized: AS7341 needs a verified I2C bus and the 365-nm UV source needs a protected constant-current driver with a physically verified OFF default. Without real optical assembly and experiment-labeled physical spectra, firmware NEVER claims PETROLEUM or produces scientific measurements.
+
+Desktop-only Random Forest training (requires scikit-learn):
+
+    py -3 -m pip install scikit-learn
+    py -3 -m tools.train_edge_model --dataset your_physical_experiment.csv --output out/edge-model-v1 --version optical-v1
+
+The training script requires physical samples and groups by independent experiment/run ID. No bundled ready-to-use oil classifier exists. See docs/MODULE_E_EVIDENCE.md.
+
+## Device cloud pairing core
+
+services/cloud_pairing.py implements the strict server challenge/confirmation state machine using injected certified HTTPS transport, device identity, clock and a physical PAIR event. It cannot start pairing over the setup AP or without a genuine PAIR input. It is currently **not activated by main.py** because real A7670C HTTPS/certificate verification, secure deviceKey provisioning and a verified PAIR button are not complete. This is not yet mobile-app acceptance.

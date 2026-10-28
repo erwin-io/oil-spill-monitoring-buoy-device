@@ -26,3 +26,8 @@ The runtime tests cover startup without the UV sensor, ticking a resident softwa
 ## Wi-Fi setup AP tests
 
 Offline tests in tests/test_setup_portal.py exercise per-device password persistence, first-boot activation, read-only HTTP status, browser form saving, duplicate/invalid field rejection, local-only Host/Origin, CSRF token, body limit, AP timeout, post-save shutdown and non-reentry. Fakes open no Wi-Fi or cloud sockets. Real ESP32-S3 acceptance must verify that an unprovisioned device advertises BlueGuard-XXXXXX on cold boot and that a phone can load http://192.168.4.1/ and save a valid APN; CI alone cannot prove this.
+
+
+## Module E and pairing software tests
+
+tests/test_module_e.py covers AS7341 driver with mocked I2C, dark-subtraction, UV OFF cleanup after exception, median robust sampling, saturation rejection, clean-water baseline repeatability rules and conservative tree inference. tests/test_cloud_pairing.py covers physical-event gate, challenge request, deferred confirmation, expiration, server identity validation and nonce redaction. These tests run with no real modem/sensor/network and do not meet physical or scientific acceptance.

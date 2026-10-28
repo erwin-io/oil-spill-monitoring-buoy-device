@@ -24,3 +24,8 @@ __pycache__/
 venv/
 .test-output/
 .DS_Store
+
+# Machine-generated experimental artifacts and model outputs
+out/
+*.joblib
+*.pkl

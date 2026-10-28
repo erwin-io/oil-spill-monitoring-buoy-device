@@ -61,3 +61,12 @@ Pending implementation/verification: real UART electrical adapter and modem powe
 ## Local first-boot setup AP
 
 The native ESP32-S3 Wi-Fi radio is independent of the UV sensor and LTE UART. During the actual MicroPython boot, main.serve_forever() creates the local setup portal only for an unprovisioned device. It serves a browser page and allows saving **only** a device label and SIM APN. It is not a remote API configuration write; DEFAULT_CONFIG is untouched. It has no claim/ownership or protected QR authority, and does not accept X-Device-Key. WPA2 uses a unique on-device key stored outside version control. The session is bounded to 15 minutes, and auto-entry is disabled after successful setup. A verified physical SETUP GPIO16 trigger and manufacturing-safe distribution of the unique password remain pending.
+
+
+## Module E software boundaries
+
+drivers/as7341.py implements independently-testable I2C configuration and six channel extraction. services/optics.py supports UV-OFF/UV-ON repeated sampling but requires injected VERIFIED UV-switch interface and fails off on exceptions. services/calibration.py requires physical clean-water runs with final optical geometry. services/edge_model.py executes a compact tree forest trained off-board; without an approved model file it cannot classify. The service intentionally does not auto-energize GPIO21 or assert calibrated oil sensing on an unbuilt optical stack.
+
+## Pairing code boundary
+
+services/cloud_pairing.py implements contract-level 5-min PAIR challenge and server confirmation flow, but device-to-cloud HTTPS transport, encrypted identity provisioning and physical PAIR input integration are unresolved. Never register a device as Owner based on AP access or mock responses.
