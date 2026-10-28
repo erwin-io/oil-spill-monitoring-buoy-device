@@ -158,6 +158,14 @@ class ManifestTests(unittest.TestCase):
         d.perform_deploy(self.root, self.files, "COM7", runner=runner, no_reset=True, say=lambda x: None)
         self.assertEqual(runner.resets, 0)
 
+    def test_upload_reports_major_stages(self):
+        runner = FakeMpremoteRunner(self.root)
+        log = []
+        d.perform_deploy(self.root, self.files, "COM15", runner=runner, say=log.append)
+        for stage in ("[1/5]", "[2/5]", "[3/5]", "[4/5]", "[5/5]"):
+            self.assertTrue(any(stage in line for line in log), stage)
+
+
 
 class SerialSelectionTests(unittest.TestCase):
     def fake_port(self, device, vid, pid, description=""):
@@ -254,12 +262,6 @@ class SerialSelectionTests(unittest.TestCase):
         self.assertIn("Uploading main.py", str(caught.exception))
         self.assertNotIn("sensitive_path", str(caught.exception))
 
-    def test_upload_reports_major_stages(self):
-        runner = FakeMpremoteRunner(self.root)
-        log = []
-        d.perform_deploy(self.root, self.files, "COM15", runner=runner, say=log.append)
-        for stage in ("[1/5]", "[2/5]", "[3/5]", "[4/5]", "[5/5]"):
-            self.assertTrue(any(stage in line for line in log), stage)
 
     def test_missing_manual_port_rejected(self):
         with self.assertRaises(d.DeployError):
