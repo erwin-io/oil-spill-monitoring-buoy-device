@@ -1,4 +1,4 @@
-# Module D — Stage 1 foundation + initial UART implementation (2026-10-28)
+# Module D — resident offline firmware runtime + UART boundary (2026-10-28)
 
 ## Approved decisions
 
@@ -12,6 +12,7 @@
 
     boot.py (passive)
     main.py -> app.controller -> config.validate_config (cloud only)
+            -> app.runtime / app.scheduler (resident local service)
                              -> config.validate_hardware_config (board + A7670C)
                              -> drivers.unbound (no GPIO)
     services.telemetry -> injected measurement_source / clock / id_generator
@@ -25,18 +26,18 @@
 
 Shared services consume small duck-typed methods: set_safe_outputs(), read_measurement(), read_health(), iso_now(), next_id(prefix) and request(method,path,headers,payload). They do not import machine, network, UART or storage modules. Test-only fakes implement the same methods. Future real drivers can replace fakes without changing service logic.
 
-## Safe startup contract
+## Resident Module D service — independent of Module E
 
-1. boot.preflight() is passive; it makes no hardware claims.
-2. main.run() supplies an UnboundBoard by default, whose set_safe_outputs() returns false rather than guessing GPIOs.
-3. The controller requests the fail-safe output state **before** validating configuration.
-4. Without verified board binding, the state is UNCONFIGURED and no network, sensing or scheduling runs.
-5. With a fake safe board and separately validated cloud and hardware configuration, the state is SAFE_IDLE; this is a software-only result.
-6. Initialization exceptions, invalid cloud configuration or invalid hardware configuration transition to FAULT without enabling operations.
+1. `boot.preflight()` stays passive (no GPIO/network/secret initialization).
+2. `main.run()` calls the safe-output adapter before cloud and hardware validation. UnboundBoard's False result now permits a **software-only runtime**, never real actuator or modem output.
+3. Invalid settings/hardware configuration and safe-output exceptions still yield `FAULT`; no scheduler begins.
+4. Without sensors the default state is `RUNNING_OFFLINE` with `sensor=NOT_INSTALLED`, `modem=NOT_CONNECTED`, `cloud=OFFLINE`, and `actuators=DISABLED`.
+5. On MicroPython `main.py` runs a foreground monotonic scheduler and a one-minute heartbeat. It counts due-but-unmeasurable cycles as `SKIPPED_SENSOR_UNAVAILABLE` and **never fabricates scientific telemetry or posts to production**.
+6. Ctrl+C returns the Thonny REPL; `import main; print(main.status())` exposes uptime and counters while the service is paused.
 
-The centralized config.py contains disabled, provisional 23-GPIO assignments for A7670C, AS7341, DS3231, microSD, pumps, valves, UV, separate buttons, battery/solar ADC and optional leak/flow/card-detect inputs; the strict API-facing DEFAULT_CONFIG remains unchanged. Hardware validation checks collision/reserved-pin constraints and rejects enabling any component. It does not initialize UART/I2C/SPI or GPIO. See docs/HARDWARE_MAPPING.md.
+The runtime does not import `machine`, use a socket, write periodic flash logs or power unverified hardware. The cloud `DEFAULT_CONFIG` and provisional 23-GPIO map remain centrally defined in `config.py`.
 
-Physical fail-safe actuator wiring, modem power delivery, RTC, microSD, secure storage and real watchdog operation are *not verified*.
+**Operational limit:** `RUNNING_OFFLINE` is software-service readiness only; no LTE/HTTPS, UV sensor, real local logging or pump/UV control has been proven.
 
 ## API boundary
 

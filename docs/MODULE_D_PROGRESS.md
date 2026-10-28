@@ -4,13 +4,13 @@ Started: 2026-10-28, based on the original approved Module D requirements 39–5
 
 | Requirement | Development state | Evidence and remaining gate |
 |---|---|---|
-| D39 Modular ESP32-S3 architecture | Initial code exists | app/drivers/services and physically executed safe bootstrap; integration incomplete |
+| D39 Modular ESP32-S3 architecture | Resident software runtime implemented | app/runtime and app/scheduler do not depend on optical hardware; this revision awaits physical smoke test |
 | D40 Boot and self-test | Safe fallback implemented | UnboundBoard returns UNCONFIGURED; real hardware tests/self-checks pending |
 | D41 A7670C UART/AT | Offline driver implemented | Injected UART, bounded command parser and tests; real pin/electrical integration pending |
 | D42 SIM/APN/LTE | Read-only diagnostics implemented | CPIN/CEREG/CSQ/CGATT parser; SIM/APN provision/registration/recovery pending |
 | D43 HTTPS client | Fake-only request boundary | Certificate/hostname verification and physical LTE upload pending |
 | D44 Device secrets | Policy only | Production secure provisioning, storage, erase and recovery pending |
-| D45 Measurement scheduler | Not implemented | Time based measurement cycle and power policy pending |
+| D45 Measurement scheduler | Monotonic software scheduler implemented | Due events and sensor-skip diagnostics; pump integration and low-power policy pending |
 | D46 Remote config sync | Cloud schema guard only | GET/validate/last-known-good persistent rollback pending |
 | D47 RTC/timestamps | Not implemented | DS3231 verification, sync and offset-aware timestamp pending |
 | D48 microSD local logging | Not implemented | Mount, journal, flush, corruption and power-loss tests pending |
@@ -36,3 +36,7 @@ Verify exact A7670C carrier variant (front/back photos, labels), UART voltage le
 D41 real hardware smoke verification when electrically cleared → D42 registration/APN state machine and bounded retry → D47 RTC → D48/49 durable journal/queue → D43 TLS/HTTP transport integrated with durable queue → D45/46 scheduler/config → D44 provisioning and physical PAIR integration → D50/51/52 health, watchdog and releases → multi-module E/F/G end-to-end evidence.
 
 **Upstream A/B/C API and mobile contracts are not modified.** Official checklist status remains unchanged until physical/contract evidence and owner acceptance.
+
+## Resident software increment — no Module E hardware required
+
+`main.py` now starts a continuous local Module D service on MicroPython. The `RUNNING_OFFLINE` state does not claim live LTE, cloud health transmission, a working oil detector, or pumps. One-minute heartbeat and configurable measurement schedule run without UV/AS7341; skipped due events are counted without producing synthetic measurements. Status can be inspected after Ctrl+C using `import main; print(main.status())`. No new hardware is enabled, no periodic flash writes, and the existing strict API configuration is preserved. Physical firmware evidence on this exact revision is still required.

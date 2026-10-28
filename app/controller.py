@@ -1,4 +1,4 @@
-"""Stage 1 fail-closed bootstrap. No sensing, networking or scheduling yet."""
+"""Module D software bootstrap, independent of optional optical hardware."""
 from config import default_hardware_config, validate_config, validate_hardware_config
 
 
@@ -10,15 +10,14 @@ class DeviceController:
         self.state = "NEW"
 
     def start(self):
-        # Physical safety still requires a verified board driver (later stage).
+        # Require an attempt to enter safe outputs BEFORE parsing configs.
+        # UnboundBoard returns False: safe to run *software only*; never
+        # activate any GPIO or misrepresent real hardware as verified.
         try:
             safe = self.board.set_safe_outputs()
         except Exception:
             self.state = "FAULT"
             return {"state": self.state, "reason": "SAFE_OUTPUT_FAILURE"}
-        if safe is not True:
-            self.state = "UNCONFIGURED"
-            return {"state": self.state, "reason": "NO_VERIFIED_HARDWARE_MAPPING"}
         try:
             self.settings = validate_config(self.settings)
         except ValueError:
@@ -29,7 +28,10 @@ class DeviceController:
         except ValueError:
             self.state = "FAULT"
             return {"state": self.state, "reason": "INVALID_HARDWARE_CONFIG"}
-        # SAFE_IDLE is a fake-board software state only. No modem power, UART
-        # or other hardware drivers are ever initialized by this controller.
-        self.state = "SAFE_IDLE"
-        return {"state": self.state, "reason": "STAGE1_NO_AUTOMATIC_OPERATIONS"}
+        # Always available without Module E: scheduler/uptime/diagnostics.
+        # Not equivalent to physical modem, cloud or oil-monitoring readiness.
+        self.state = "RUNNING_OFFLINE"
+        reason = "SENSOR_PENDING_HARDWARE_UNBOUND" if safe is not True else "SENSOR_PENDING"
+        return {"state": self.state, "reason": reason,
+                "sensor": "NOT_INSTALLED", "modem": "NOT_CONNECTED",
+                "cloud": "OFFLINE", "actuators": "DISABLED"}

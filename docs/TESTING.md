@@ -18,3 +18,7 @@ New modem tests use an entirely offline deterministic fake UART and wrapping mon
 The ApiClient is an injected request boundary, **not** a cellular/TLS implementation. Stage 1 fake responses of HTTP 201 are never proof that any external API, LTE modem or device accepted records. Stage 2 must run schema-aligned isolated emulator tests; Stage 3 must implement record-before-upload durability and retry behavior. Never transmit synthetic telemetry to production.
 
 CI workflow .github/workflows/stage1-ci.yml runs compilation, unittest discovery, firmware manifest validation and the offline example on pushes to main and pull requests targeting main. A passing CI workflow proves only the source/tests at its exact commit.
+
+## E-independent Module D runtime checks
+
+The runtime tests cover startup without the UV sensor, ticking a resident software scheduler, heartbeat/uptime, due-event skipping without fake measurements, handling long gaps without catch-up storms, invalid config fault behavior, and Ctrl+C releasing the REPL. On physical ESP32 run `main.py` and confirm the startup prints `RUNNING_OFFLINE`; interrupt with Ctrl+C and inspect `import main; print(main.status())`. This is not physical LTE/TLS or scientific oil-detection acceptance.

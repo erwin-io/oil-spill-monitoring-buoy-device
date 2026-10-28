@@ -12,18 +12,18 @@ from tests.fakes.device import FakeBoard
 
 class StartupTests(unittest.TestCase):
     def test_boot_is_passive(self):
-        self.assertEqual(boot.preflight(), {"stage": 1, "hardware_initialized": False, "network_initialized": False})
+        self.assertEqual(boot.preflight(), {"stage": "MODULE_D", "hardware_initialized": False, "network_initialized": False})
 
     def test_default_start_does_not_touch_hardware_or_network(self):
-        self.assertEqual(main.run()["state"], "UNCONFIGURED")
+        self.assertEqual(main.run()["state"], "RUNNING_OFFLINE")
 
     def test_fake_safe_board_reaches_safe_idle(self):
         board = FakeBoard()
-        self.assertEqual(main.run(board=board)["state"], "SAFE_IDLE")
+        self.assertEqual(main.run(board=board)["state"], "RUNNING_OFFLINE")
         self.assertEqual(board.calls, ["set_safe_outputs"])
 
     def test_unverified_board_prevents_active_operation(self):
-        self.assertEqual(main.run(board=FakeBoard(False))["state"], "UNCONFIGURED")
+        self.assertEqual(main.run(board=FakeBoard(False))["state"], "RUNNING_OFFLINE")
 
     def test_invalid_config_never_starts(self):
         board = FakeBoard()
@@ -48,9 +48,10 @@ class StartupTests(unittest.TestCase):
             for name in ("main", "boot", "config", "app.controller", "drivers.unbound",
                          "services.contracts", "services.telemetry", "services.health",
                          "services.api_client", "services.pairing",
-                         "drivers.modem_a7670c", "services.network"):
+                         "drivers.modem_a7670c", "services.network",
+                         "app.scheduler", "app.runtime"):
                 importlib.reload(importlib.import_module(name))
-            self.assertEqual(main.run()["state"], "UNCONFIGURED")
+            self.assertEqual(main.run()["state"], "RUNNING_OFFLINE")
 
 
 if __name__ == "__main__":

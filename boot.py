@@ -1,6 +1,7 @@
-"""Stage 1 passive boot hook. No GPIO, filesystem, radio or modem initialization."""
+"""Module D passive boot hook; no GPIO, UART or Wi-Fi side effects."""
 
 
 def preflight():
-    """Report only software bootstrap readiness; not a hardware self-test."""
-    return {"stage": 1, "hardware_initialized": False, "network_initialized": False}
+    """Software boot hook only; not proof of any peripheral."""
+    return {"stage": "MODULE_D", "hardware_initialized": False,
+            "network_initialized": False}

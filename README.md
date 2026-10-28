@@ -1,6 +1,6 @@
 # BlueGuard Buoy — Module D Device Firmware
 
-**Stage 1 hardware bootstrap verified on ESP32-S3 N16R8; Module D development started.** First D41/D42 slice implements a safe, injected A7670C AT-command driver and read-only SIM/LTE status parsing. No physical modem, cellular/HTTPS call, sensor, pump, local AP or cloud pairing is activated.
+**Module D resident firmware services now run even without Module E.** The ESP32-S3 runs a monotonic measurement scheduler, periodic heartbeat and live uptime/status reporting with no AS7341/UV sensor. Sensor-dependent opportunities are skipped, never invented as oil readings. The safe A7670C AT driver remains offline-tested; real modem/cloud, pumps, AP and pairing require electrical integration.
 
 ## Desktop tests
 
@@ -10,7 +10,7 @@ py -3 tools/simulate.py
 py -3 main.py
 ```
 
-`main.py` defaults to `UNCONFIGURED` and does not initialize GPIO, network, UART or secrets. The simulator uses in-memory fakes, and its measurements are tagged `SIMULATED_DO_NOT_USE_FOR_SCIENCE`.
+`main.run()` returns `RUNNING_OFFLINE`. On MicroPython, `main.py` executes a **resident foreground service** until Ctrl+C; it does not initialize GPIO, network, UART or secrets. The simulator uses in-memory fakes, and its measurements are tagged `SIMULATED_DO_NOT_USE_FOR_SCIENCE`.
 
 ## ESP32-S3 upload and Thonny debugging (Windows)
 
@@ -33,9 +33,9 @@ Full instructions: [Windows upload + Thonny guide](docs/DEPLOYMENT_THONNY.md).
 ## Repository organization
 
 - `boot.py`: passive startup; no GPIO initialization.
-- `main.py`: explicit cloud/hardware configuration injection and safe unconfigured default.
+- `main.py`: active Module D service (no Module E dependency); `main.status()` shows uptime and scheduling counters after Ctrl+C in Thonny.
 - `config.py`: **single non-secret configuration location** with a provisional **23-GPIO map** for modem, optics, RTC, SD, pumps/valves/UV, buttons and battery/solar monitoring. All physical hardware remains disabled. Cloud-only DEFAULT_CONFIG is unchanged. See [Hardware pin audit](docs/HARDWARE_MAPPING.md).
-- `app/`: bootstrap and safe-state orchestration.
+- `app/`: safe validation plus a working periodic scheduler and resident heartbeat/uptime runtime.
 - `drivers/`: fail-closed physical adapter boundary; `modem_a7670c.py` implements allowlisted, bounded AT transactions against injected UART without activating physical pins.
 - `services/`: measurement/health preparation, fake-transport API client, physical-PAIR policy, and read-only `network.py` modem status parsing.
 - `firmware-manifest.json`: exact allowlist of files permitted on the ESP32; update when runtime modules change (enforced in CI).
@@ -45,5 +45,7 @@ Full instructions: [Windows upload + Thonny guide](docs/DEPLOYMENT_THONNY.md).
 - `docs/`: architecture, hardware unknowns and test evidence.
 
 Documentation: [Architecture](docs/ARCHITECTURE.md) · [Module D progress](docs/MODULE_D_PROGRESS.md) · [Tests](docs/TESTING.md) · [Stage 1 evidence](docs/STAGE1_EVIDENCE.md).
+
+**Local smoke test after flashing:** allow the resident loop to print startup messages, press Ctrl+C to return to Thonny REPL, then run `import main; print(main.status())`. It must report `RUNNING_OFFLINE`, `sensor=NOT_INSTALLED`, `modem=NOT_CONNECTED`, and `scientificMeasurements=0`. Press EN to reboot into the service again. This is **local software readiness, not active oil detection or LTE connectivity**.
 
 **Security:** Never commit real device credentials. No production Firebase/Vercel endpoint is contacted by desktop simulations or deployment tools. The device repo currently uses `main` directly by owner authorization; successful tests do not establish physical acceptance.

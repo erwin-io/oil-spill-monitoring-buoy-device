@@ -101,7 +101,7 @@ class HardwareConfigTests(unittest.TestCase):
         self.assertEqual(validate_hardware_config(self.hardware), self.hardware)
         board = FakeBoard()
         result = run(board=board, hardware=self.hardware)
-        self.assertEqual(result["state"], "SAFE_IDLE")
+        self.assertEqual(result["state"], "RUNNING_OFFLINE")
         self.assertEqual(board.calls, ["set_safe_outputs"])
 
     def test_enabled_modem_never_initializes_even_with_fake_safe_board(self):
@@ -188,11 +188,12 @@ class HardwareConfigTests(unittest.TestCase):
 
     def test_pin_plan_cannot_turn_on_physical_devices(self):
         board = FakeBoard()
-        self.assertEqual(run(board=board, hardware=self.hardware)["state"], "SAFE_IDLE")
+        self.assertEqual(run(board=board, hardware=self.hardware)["state"], "RUNNING_OFFLINE")
         self.assertEqual(board.calls, ["set_safe_outputs"])
 
-    def test_unbound_board_remains_unconfigured(self):
-        self.assertEqual(run()["state"], "UNCONFIGURED")
+    def test_unbound_board_starts_local_services_without_e(self):
+        self.assertEqual(run()["state"], "RUNNING_OFFLINE")
+        self.assertEqual(run()["sensor"], "NOT_INSTALLED")
 
 
 if __name__ == "__main__":
