@@ -31,3 +31,6 @@ Offline tests in tests/test_setup_portal.py exercise per-device password persist
 ## Module E and pairing software tests
 
 tests/test_module_e.py covers AS7341 driver with mocked I2C, dark-subtraction, UV OFF cleanup after exception, median robust sampling, saturation rejection, clean-water baseline repeatability rules and conservative tree inference. tests/test_cloud_pairing.py covers physical-event gate, challenge request, deferred confirmation, expiration, server identity validation and nonce redaction. These tests run with no real modem/sensor/network and do not meet physical or scientific acceptance.
+
+
+Tests test_pair_button.py validate physical debouncing, boot-held button safety, factory identity validation and refusal to run pairing without a physical source. Desktop evidence only.

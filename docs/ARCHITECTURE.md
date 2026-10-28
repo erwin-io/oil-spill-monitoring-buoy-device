@@ -70,3 +70,6 @@ drivers/as7341.py implements independently-testable I2C configuration and six ch
 ## Pairing code boundary
 
 services/cloud_pairing.py implements contract-level 5-min PAIR challenge and server confirmation flow, but device-to-cloud HTTPS transport, encrypted identity provisioning and physical PAIR input integration are unresolved. Never register a device as Owner based on AP access or mock responses.
+
+
+Physical PAIR input and cloud pairing are injected jointly; main.serve_forever() rejects one without the other. Factory credential format is separate from the setup AP and firmware manifest. Certificate-validated A7670C HTTPS, device credential provisioning/flash encryption and real GPIO/button integration remain gating steps.

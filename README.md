@@ -71,3 +71,8 @@ The training script requires physical samples and groups by independent experime
 ## Device cloud pairing core
 
 services/cloud_pairing.py implements the strict server challenge/confirmation state machine using injected certified HTTPS transport, device identity, clock and a physical PAIR event. It cannot start pairing over the setup AP or without a genuine PAIR input. It is currently **not activated by main.py** because real A7670C HTTPS/certificate verification, secure deviceKey provisioning and a verified PAIR button are not complete. This is not yet mobile-app acceptance.
+
+
+## Production pairing integration boundary
+
+The firmware includes the new physical_pair_button, device_identity and cloud_pairing modules. The resident firmware loop supports injected physical button + pairing service but does NOT construct these by default: it still needs real certificate-verified A7670C HTTPS and factory-provisioned device ID/key. The PAIR input is proposed on GPIO15; never substitute SETUP or EN/reset. The identity file /blueguard-identity.json is a local factory-only record with schema=1, deviceId and deviceKey, excluded from firmware Git/deploy manifest and setup AP. Plain MicroPython flash storage is not itself secure: production secure boot/flash encryption and protected provisioning are pending. No fake keys or fake server confirmations are allowed.

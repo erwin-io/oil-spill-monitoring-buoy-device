@@ -49,3 +49,8 @@ The embedded ESP32 WLAN can now host a bounded, WPA2-protected, local MicroPytho
 ## Cloud pairing logic code milestone
 
 services/cloud_pairing.py implements device-authenticated challenge initiation on a physical PAIR event, three-second confirmation retries and five-minute local expiry, and keeps challenge nonce private. Tested with injected fake HTTP responses only. It is not called by resident main.py until secure device identity, genuine physical GPIO15 PAIR and certificate-verified A7670C HTTP transport exist. Mobile Add Device is already present in the app; a fake challenge or local AP claim is NOT an acceptable substitute.
+
+
+## Physical button and device-identity module
+
+Implemented debounced active-low PAIR input adapter with boot-held safety and strict factory identity parser. The resident loop polls CloudPairing only when both physical button and trusted transport service are injected. Default firmware cannot yet initialize A7670C cellular HTTPS or load its production credentials securely, so actual mobile pairing remains blocked. This is NOT acceptance of D41–44.

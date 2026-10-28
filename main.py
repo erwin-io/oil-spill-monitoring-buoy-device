@@ -34,7 +34,8 @@ def status():
 
 
 def serve_forever(board=None, settings=None, hardware=None, clock=None,
-                  output=print, max_ticks=None, setup_portal=None):
+                  output=print, max_ticks=None, setup_portal=None,
+                  pairing_service=None, pair_input=None):
     """Run the Module D heartbeat and scheduler. Ctrl+C releases the REPL.
 
     max_ticks is for finite deterministic tests only; normal boot is resident.
@@ -79,9 +80,18 @@ def serve_forever(board=None, settings=None, hardware=None, clock=None,
                 setup_portal.close()
             except Exception:
                 pass
+    if (pairing_service is None) != (pair_input is None):
+        # Never activate a pairing service without a genuine physical input.
+        raise ValueError("Pairing requires physical input and certified transport")
     loops = 0
     try:
         while True:
+            if pairing_service is not None:
+                # Explicitly attached verified GPIO/button and cloud transport.
+                if pair_input.poll():
+                    pairing_service.physically_pressed()
+                    output("BlueGuard physical PAIR requested")
+                pairing_service.tick()
             if PORTAL is not None:
                 try:
                     PORTAL.tick()
