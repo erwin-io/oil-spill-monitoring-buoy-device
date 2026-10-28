@@ -1,6 +1,6 @@
 # BlueGuard Buoy — Module D Device Firmware
 
-**Module D resident firmware services now run even without Module E.** The ESP32-S3 runs a monotonic measurement scheduler, periodic heartbeat and live uptime/status reporting with no AS7341/UV sensor. Sensor-dependent opportunities are skipped, never invented as oil readings. The safe A7670C AT driver remains offline-tested; real modem/cloud, pumps, AP and pairing require electrical integration.
+**Module D resident firmware services now run even without Module E.** The ESP32-S3 runs a monotonic measurement scheduler, periodic heartbeat and live uptime/status reporting with no AS7341/UV sensor. Sensor-dependent opportunities are skipped, never invented as oil readings. The safe A7670C AT driver remains offline-tested; real modem/cloud, pumps and pairing still require electrical integration. The device can now serve a temporary first-boot Wi-Fi setup portal.
 
 ## Desktop tests
 
@@ -10,7 +10,7 @@ py -3 tools/simulate.py
 py -3 main.py
 ```
 
-`main.run()` returns `RUNNING_OFFLINE`. On MicroPython, `main.py` executes a **resident foreground service** until Ctrl+C; it does not initialize GPIO, network, UART or secrets. The simulator uses in-memory fakes, and its measurements are tagged `SIMULATED_DO_NOT_USE_FOR_SCIENCE`.
+`main.run()` returns `RUNNING_OFFLINE`. On MicroPython, `main.py` executes a **resident foreground service** until Ctrl+C; it never drives unverified GPIO or UART, but it starts the built-in ESP32 Wi-Fi AP for unprovisioned devices. The simulator uses in-memory fakes, and its measurements are tagged `SIMULATED_DO_NOT_USE_FOR_SCIENCE`.
 
 ## ESP32-S3 upload and Thonny debugging (Windows)
 
@@ -49,3 +49,9 @@ Documentation: [Architecture](docs/ARCHITECTURE.md) · [Module D progress](docs/
 **Local smoke test after flashing:** allow the resident loop to print startup messages, press Ctrl+C to return to Thonny REPL, then run `import main; print(main.status())`. It must report `RUNNING_OFFLINE`, `sensor=NOT_INSTALLED`, `modem=NOT_CONNECTED`, and `scientificMeasurements=0`. Press EN to reboot into the service again. This is **local software readiness, not active oil detection or LTE connectivity**.
 
 **Security:** Never commit real device credentials. No production Firebase/Vercel endpoint is contacted by desktop simulations or deployment tools. The device repo currently uses `main` directly by owner authorization; successful tests do not establish physical acceptance.
+
+## First-boot local Wi-Fi setup
+
+When the ESP32-S3 is unprovisioned, it **automatically advertises a short-lived, WPA2-protected BlueGuard-XXXXXX hotspot** on MicroPython boot. Connect your phone, enter the unique AP password printed to the physical USB serial console for this development prototype, and browse http://192.168.4.1/. No F5 or command is needed to start the AP. Local setup currently stores a device label and SIM-provider APN only, without sending data to cloud or claiming ownership.
+
+The portal closes after 15 minutes or shortly after successful save. Once provisioned, automatic AP startup is disabled; verified physical SETUP re-entry and per-device factory credential labeling are still necessary before production shipping. The APN is **not yet sent to an actual A7670C modem**. See [Setup AP guide](docs/SETUP_AP.md).

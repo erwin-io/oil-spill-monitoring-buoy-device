@@ -19,6 +19,29 @@ class Clock:
 
 
 class ModuleDRuntimeTests(unittest.TestCase):
+    def test_setup_portal_is_tickable_without_lte_or_sensor(self):
+        class Portal:
+            def __init__(self):
+                self.active = True
+                self.ssid = "BlueGuard-TEST"
+                self.ip = "192.168.4.1"
+                self.password = "sample-test-password"
+                self.ticks = 0
+            def start(self):
+                return True
+            def tick(self):
+                self.ticks += 1
+            def close(self):
+                self.active = False
+        p = Portal()
+        messages = []
+        report = main.serve_forever(clock=Clock(), max_ticks=3,
+                                    setup_portal=p, output=messages.append)
+        self.assertEqual(report["state"], "RUNNING_OFFLINE")
+        self.assertEqual(p.ticks, 3)
+        self.assertFalse(p.active)
+        self.assertTrue(any("BlueGuard setup AP" in m for m in messages))
+
     def test_no_sensor_startup_runs_offline(self):
         result = main.run()
         self.assertEqual(result["state"], "RUNNING_OFFLINE")

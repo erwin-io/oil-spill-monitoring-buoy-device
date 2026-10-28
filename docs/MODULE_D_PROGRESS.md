@@ -40,3 +40,7 @@ D41 real hardware smoke verification when electrically cleared → D42 registrat
 ## Resident software increment — no Module E hardware required
 
 `main.py` now starts a continuous local Module D service on MicroPython. The `RUNNING_OFFLINE` state does not claim live LTE, cloud health transmission, a working oil detector, or pumps. One-minute heartbeat and configurable measurement schedule run without UV/AS7341; skipped due events are counted without producing synthetic measurements. Status can be inspected after Ctrl+C using `import main; print(main.status())`. No new hardware is enabled, no periodic flash writes, and the existing strict API configuration is preserved. Physical firmware evidence on this exact revision is still required.
+
+## First-boot Wi-Fi AP implementation increment
+
+The embedded ESP32 WLAN can now host a bounded, WPA2-protected, local MicroPython setup portal at the AP IP address, using a device-unique password generated and retained only on board. Unprovisioned first boot opens the temporary AP automatically; saving validated label/APN fields persists to the MCU filesystem and prevents unapproved automatic reopening on later boots. A local CSRF token, Host/Origin checks, HTTP body limits, no external resources and no cloud/PAIR/claim endpoints keep this interface scoped to device setup only. This stage is pending physical AP/browser acceptance, and does not satisfy cloud provisioning, SIM registration, HTTPS telemetry, authenticated device secrets, or verified SETUP button re-entry.

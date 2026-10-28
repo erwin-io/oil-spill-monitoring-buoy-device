@@ -23,6 +23,18 @@ ALLOCATABLE_GPIO = (
 
 
 # ============================================================
+# FIRST-BOOT LOCAL SETUP AP — BUILT-IN ESP32 RADIO (NO EXTERNAL GPIO)
+# ============================================================
+# Setup is not cloud ownership, PAIR or reset. The AP's unique password
+# lives on the MCU filesystem only, never in Git or cloud config.
+SETUP_AP_CONFIG = {
+    "first_boot_enabled": True,
+    "session_ms": 15 * 60 * 1000,
+    "save_grace_ms": 10 * 1000,
+    "max_clients": 2,
+}
+
+# ============================================================
 # 2. A7670C LTE MODEM — UART + TRANSISTOR CONTROL
 # ============================================================
 

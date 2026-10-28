@@ -57,3 +57,7 @@ Pending implementation/verification: real UART electrical adapter and modem powe
 - API client records can be posted through a fake transport without persistent queueing; production use must wait for record-before-upload durable queue (Stage 3).
 - Test IDs are deterministic and **must never** be used as physical record IDs.
 - Physical PAIR is only a guarded event abstraction; five-minute challenge handling is not implemented.
+
+## Local first-boot setup AP
+
+The native ESP32-S3 Wi-Fi radio is independent of the UV sensor and LTE UART. During the actual MicroPython boot, main.serve_forever() creates the local setup portal only for an unprovisioned device. It serves a browser page and allows saving **only** a device label and SIM APN. It is not a remote API configuration write; DEFAULT_CONFIG is untouched. It has no claim/ownership or protected QR authority, and does not accept X-Device-Key. WPA2 uses a unique on-device key stored outside version control. The session is bounded to 15 minutes, and auto-entry is disabled after successful setup. A verified physical SETUP GPIO16 trigger and manufacturing-safe distribution of the unique password remain pending.

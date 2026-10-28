@@ -22,3 +22,7 @@ CI workflow .github/workflows/stage1-ci.yml runs compilation, unittest discovery
 ## E-independent Module D runtime checks
 
 The runtime tests cover startup without the UV sensor, ticking a resident software scheduler, heartbeat/uptime, due-event skipping without fake measurements, handling long gaps without catch-up storms, invalid config fault behavior, and Ctrl+C releasing the REPL. On physical ESP32 run `main.py` and confirm the startup prints `RUNNING_OFFLINE`; interrupt with Ctrl+C and inspect `import main; print(main.status())`. This is not physical LTE/TLS or scientific oil-detection acceptance.
+
+## Wi-Fi setup AP tests
+
+Offline tests in tests/test_setup_portal.py exercise per-device password persistence, first-boot activation, read-only HTTP status, browser form saving, duplicate/invalid field rejection, local-only Host/Origin, CSRF token, body limit, AP timeout, post-save shutdown and non-reentry. Fakes open no Wi-Fi or cloud sockets. Real ESP32-S3 acceptance must verify that an unprovisioned device advertises BlueGuard-XXXXXX on cold boot and that a phone can load http://192.168.4.1/ and save a valid APN; CI alone cannot prove this.

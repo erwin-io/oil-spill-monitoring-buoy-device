@@ -17,7 +17,10 @@
     "services/health.py",
     "services/network.py",
     "services/pairing.py",
+    "services/provisioning.py",
+    "services/setup_portal.py",
     "services/telemetry.py",
+    "web/setup.html",
     "main.py"
   ]
 }

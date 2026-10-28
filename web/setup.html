@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlueGuard Buoy Setup</title><style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#edf8fb;color:#15394d}
+*{box-sizing:border-box}body{margin:0;padding:24px 16px}
+main{max-width:520px;margin:24px auto;padding:30px;background:white;border-radius:22px;box-shadow:0 10px 30px #0a33491a}
+h1{font-size:1.65rem;margin:8px 0}.brand{color:#087d90;font-weight:750;letter-spacing:.08em}
+p,small{color:#456070;line-height:1.6}.meta{background:#eaf7fa;padding:15px;border-radius:12px;margin:20px 0}
+label{display:block;margin:18px 0 6px;font-weight:650}
+input{width:100%;padding:13px;border-radius:12px;border:1px solid #a5c0ca;font:inherit}
+button{width:100%;padding:14px;margin-top:24px;border:0;border-radius:14px;color:white;background:#067d92;font-weight:700;font-size:1rem}
+small{display:block;margin-top:14px}footer{margin-top:25px;border-top:1px solid #e2eff3;padding-top:12px}
+</style></head><body><main>
+<div class="brand">BLUEGUARD BUOY</div><h1>Set up your device</h1>
+<p>Configure your buoy directly. This page runs on the ESP32-S3 without internet.</p>
+<div class="meta"><b>Hotspot:</b> {{SSID}}<br><b>LTE:</b> Not connected<br><b>Oil sensor:</b> Not installed</div>
+<form action="/save" method="post">
+<input type="hidden" name="token" value="{{TOKEN}}">
+<label for="label">Device label</label><input id="label" name="label" value="BlueGuard Buoy" maxlength="30" pattern="[a-zA-Z0-9 _-]{1,30}" required>
+<label for="apn">SIM provider APN</label><input id="apn" name="apn" maxlength="64" pattern="[a-zA-Z0-9._-]{1,64}" placeholder="Enter your operator APN" required>
+<small>This saves the APN only. LTE activation requires the verified A7670C hardware.</small>
+<button type="submit">Save device setup</button>
+</form>
+<footer><small>Local setup never claims ownership. Finish secure QR + physical PAIR through the official BlueGuard app after cloud connection is available. Never enter a SIM PIN, claim code, or device upload key here.</small></footer>
+</main></body></html>
