@@ -17,6 +17,12 @@ def baseline_from_runs(runs,geometry_id,min_runs=5,max_cv=0.12):
         raise CalibrationError("Geometry ID required")
     if len(runs)<min_runs:
         raise CalibrationError("Insufficient independent clean-water runs")
+    if any(not isinstance(x,dict) or x.get("source")!="PHYSICAL_CLEAN_WATER"
+           or not isinstance(x.get("runId"),str) or not x["runId"]
+           for x in runs):
+        raise CalibrationError("Physical sample evidence is required")
+    if len({x["runId"] for x in runs})!=len(runs):
+        raise CalibrationError("Independent run IDs must not be reused")
     spectra=[validate_spectrum(x["spectral"]) for x in runs]
     mean={k:sum(r[k] for r in spectra)/len(runs) for k in CHANNELS}
     cv={}

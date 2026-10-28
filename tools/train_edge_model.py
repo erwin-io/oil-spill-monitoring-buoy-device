@@ -1,7 +1,7 @@
 """Offline Random Forest training and ESP32-safe model export (not deployed).
 
 Requires: pip install scikit-learn (desktop ONLY).
-CSV columns: run_id,label,f415,f445,f480,f515,f555,f590,
+CSV columns: run_id,label,source_type,f415,f445,f480,f515,f555,f590,
 totalFluorescence,ratio590to445,slope415to590
 
 Labeled physical raw seawater samples must come from final optics. Groups are
@@ -21,11 +21,11 @@ def _rows(path):
         rows=list(csv.DictReader(f))
     if not rows:
         raise ValueError("Training file is empty")
-    if not {"run_id","label",*FEATURE_KEYS}.issubset(rows[0]):
+    if not {"run_id","label","source_type",*FEATURE_KEYS}.issubset(rows[0]):
         raise ValueError("CSV missing required columns")
     for row in rows:
-        if row["label"] not in LABELS or not row["run_id"]:
-            raise ValueError("Invalid class or experiment run ID")
+        if row["label"] not in LABELS or not row["run_id"] or row["source_type"]!="PHYSICAL_EXPERIMENT":
+            raise ValueError("Only independently labeled physical experiment data accepted")
     return rows
 
 

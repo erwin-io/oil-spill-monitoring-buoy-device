@@ -78,14 +78,26 @@ class OpticsTests(unittest.TestCase):
             OpticalCycle(None,None,None,repeats=0)
 
     def test_calibration_needs_real_repeated_consistency(self):
-        runs=[{"spectral":spectrum(10)} for i in range(5)]
+        runs=[{"spectral":spectrum(10),"source":"PHYSICAL_CLEAN_WATER","runId":"run"+str(i)} for i in range(5)]
         result=baseline_from_runs(runs,"cell-geometry-01")
         self.assertEqual(validate_calibration(result,"cell-geometry-01"),result)
         with self.assertRaises(CalibrationError):
             validate_calibration(result,"different-cell")
 
+    def test_synthetic_calibration_rejected(self):
+        runs=[{"spectral":spectrum(10),"source":"SIMULATED","runId":"run"+str(i)}
+              for i in range(5)]
+        with self.assertRaises(CalibrationError):
+            baseline_from_runs(runs,"cell")
+
+    def test_duplicate_clean_run_ids_rejected(self):
+        runs=[{"spectral":spectrum(10),"source":"PHYSICAL_CLEAN_WATER","runId":"same"}
+              for i in range(5)]
+        with self.assertRaises(CalibrationError):
+            baseline_from_runs(runs,"cell")
+
     def test_unstable_calibration_rejected(self):
-        runs=[{"spectral":spectrum(x)} for x in (1,1,1,1,100)]
+        runs=[{"spectral":spectrum(x),"source":"PHYSICAL_CLEAN_WATER","runId":"run"+str(i)} for i,x in enumerate((1,1,1,1,100))]
         with self.assertRaises(CalibrationError):
             baseline_from_runs(runs,"cell")
 
