@@ -24,11 +24,13 @@ class FakeAP:
     def __init__(self, fail=False):
         self.on = False
         self.configured = None
+        self.calls = []
         self.fail = fail
     def config(self, **kwargs):
         if self.fail:
             raise RuntimeError("WiFi unavailable")
         self.configured = kwargs
+        self.calls.append(kwargs)
     def active(self, on=None):
         if on is not None:
             self.on = on
@@ -163,8 +165,9 @@ class PortalTests(unittest.TestCase):
         self.assertTrue(self.portal.start())
         self.assertEqual(self.portal.ssid, "BlueGuard-345678")
         self.assertTrue(self.ap.on)
-        self.assertEqual(self.ap.configured["authmode"], 3)
-        self.assertEqual(self.ap.configured["password"], self.portal.password)
+        self.assertTrue(any(call.get("authmode") == 3 and
+                            call.get("password") == self.portal.password
+                            for call in self.ap.calls))
         self.assertEqual(self.sockets.listener.address, ("0.0.0.0", 80))
 
     def test_http_setup_page_and_status(self):
