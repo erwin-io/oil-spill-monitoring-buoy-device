@@ -23,10 +23,10 @@ py -3 -m pip install -r tools\requirements-deploy.txt
 **Every future update on main (from this repo):**
 
 ```powershell
-.\update-and-upload.bat
+.\upload-firmware.bat
 ```
 
-The Windows tool safely pulls main, checks serial identity, uploads **only changed files** from `firmware-manifest.json`, verifies on-device SHA-256 and requests a MicroPython soft reset. You must **release Thonny's COM port before running** the command, then reconnect Thonny to inspect the Shell. **No hardware deployment has yet been physically tested**; start with loads disconnected. If several COM ports match, use `--port COM7` (replace COM7 with the verified port).
+The Windows tool safely pulls main, checks serial identity, uploads **only changed files** from `firmware-manifest.json`, verifies on-device SHA-256 and requests a MicroPython soft reset. You must **release Thonny's COM port before running** the command, then reconnect Thonny to inspect the Shell. **No hardware deployment has yet been physically tested**; start with loads disconnected. The tool **always displays a numbered list of COM ports**, with a recommended default. Press Enter to accept or enter a number. Use `--port COM7` to bypass the prompt.
 
 Full instructions: [Windows upload + Thonny guide](docs/DEPLOYMENT_THONNY.md).
 
@@ -38,7 +38,7 @@ Full instructions: [Windows upload + Thonny guide](docs/DEPLOYMENT_THONNY.md).
 - `drivers/`: fail-closed physical adapter boundary; actual pin mapping pending.
 - `services/`: measurement/health prep, fake-transport API client, and physical-PAIR policy gate.
 - `firmware-manifest.json`: exact allowlist of files permitted on the ESP32; update when runtime modules change (enforced in CI).
-- `tools/deploy_firmware.py`, `upload-firmware.bat`, `update-and-upload.bat`: Windows serial deployment, no cloud calls.
+- `upload-firmware.bat`: **only BAT launcher**; pulls main and invokes `tools/deploy_firmware.py`, the underlying serial implementation. No cloud calls.
 - `tests/fakes/`: simulated board, sources, clock, IDs and HTTP transport.
 - `tools/simulate.py`: hardware-free runnable demo.
 - `docs/`: architecture, hardware unknowns and test evidence.

@@ -173,6 +173,52 @@ class SerialSelectionTests(unittest.TestCase):
             d.choose_port(ports)
         self.assertEqual(d.choose_port(ports, "COM9"), "COM9")
 
+
+    def test_recommended_prefers_native_espressif(self):
+        ports = [self.fake_port("COM3", 0x10C4, 0xEA60, "CP210x"),
+                 self.fake_port("COM9", 0x303A, 0x1001, "USB Serial/JTAG")]
+        self.assertEqual(d.recommended_port(ports), "COM9")
+
+    def test_prompt_always_displays_list_and_enter_uses_default(self):
+        ports = [self.fake_port("COM3", None, None, "Bluetooth"),
+                 self.fake_port("COM7", 0x303A, 0x1001, "ESP32-S3")]
+        output = []
+        self.assertEqual(d.prompt_port(ports, input_fn=lambda _: "", say=output.append), "COM7")
+        self.assertTrue(any("[1] COM3" in line for line in output))
+        self.assertTrue(any("[2] COM7" in line and "RECOMMENDED" in line for line in output))
+
+    def test_prompt_allows_number_override(self):
+        ports = [self.fake_port("COM3", 0x10C4, 0xEA60, "CP210x"),
+                 self.fake_port("COM7", 0x303A, 0x1001, "ESP32")]
+        self.assertEqual(d.prompt_port(ports, input_fn=lambda _: "1", say=lambda _: None), "COM3")
+
+    def test_prompt_allows_explicit_port_name(self):
+        ports = [self.fake_port("COM5", None, None, "Other device"),
+                 self.fake_port("COM8", 0x303A, 0x1001, "Espressif")]
+        self.assertEqual(d.prompt_port(ports, input_fn=lambda _: "com5", say=lambda _: None), "COM5")
+
+    def test_unknown_port_cannot_be_default(self):
+        ports = [self.fake_port("COM4", None, None, "Bluetooth")]
+        selections = iter(["", "1"])
+        self.assertEqual(d.prompt_port(ports, input_fn=lambda _: next(selections), say=lambda _: None), "COM4")
+
+    def test_prompt_cancel_is_safe(self):
+        with self.assertRaises(d.DeployError):
+            d.prompt_port([self.fake_port("COM7", 0x303A, 0x1001)], input_fn=lambda _: "q", say=lambda _: None)
+
+    def test_prompt_closed_input_is_safe(self):
+        def end(_):
+            raise EOFError()
+        with self.assertRaises(d.DeployError):
+            d.prompt_port([self.fake_port("COM7", 0x303A, 0x1001)], input_fn=end, say=lambda _: None)
+
+    def test_prompt_no_serial_ports_is_safe(self):
+        with self.assertRaises(d.DeployError):
+            d.prompt_port([], input_fn=lambda _: "", say=lambda _: None)
+
+    def test_repository_has_only_one_batch_launcher(self):
+        self.assertEqual([p.name for p in d.ROOT.glob("*.bat")], ["upload-firmware.bat"])
+
     def test_missing_manual_port_rejected(self):
         with self.assertRaises(d.DeployError):
             d.choose_port([], "COM7")

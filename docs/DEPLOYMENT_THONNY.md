@@ -20,10 +20,10 @@ The installer installs **mpremote and pyserial on the Windows PC**, never on the
 ## Your fixed one-command workflow (from repository root)
 
 ```powershell
-.\update-and-upload.bat
+.\upload-firmware.bat
 ```
 
-This batch script (1) confirms the current branch is `main`, (2) runs `git pull --ff-only origin main`, (3) refuses local uncommitted firmware or manifest edits, (4) selects exactly one compatible USB-serial port, (5) verifies an ESP32-S3 MicroPython interpreter on that port, (6) uploads **only changed or missing allowlisted files**, (7) verifies SHA-256 hashes on the device, (8) requests a soft reset so on-device `main.py` restarts, and (9) releases the port for Thonny. If any upload/verification step fails, it **does not intentionally reset** the board; rerunning the same command safely rechecks the device's actual files.
+This batch script (1) confirms the current branch is `main`, (2) runs `git pull --ff-only origin main`, (3) refuses local uncommitted firmware or manifest edits, (4) displays every connected COM port, highlights the smart suggested selection and lets you press Enter or choose another port, (5) verifies an ESP32-S3 MicroPython interpreter on that port, (6) uploads **only changed or missing allowlisted files**, (7) verifies SHA-256 hashes on the device, (8) requests a soft reset so on-device `main.py` restarts, and (9) releases the port for Thonny. If any upload/verification step fails, it **does not intentionally reset** the board; rerunning the same command safely rechecks the device's actual files.
 
 **Preferred safe rule:** Run it with pumps, UV LED and other loads disconnected during Stage 1. On current Stage 1 firmware, the expected device boot output is `BlueGuard Stage 1: UNCONFIGURED` (not `SAFE_IDLE`, which belongs to desktop FakeBoard).
 
@@ -32,18 +32,18 @@ This batch script (1) confirms the current branch is `main`, (2) runs `git pull 
 ```powershell
 .\upload-firmware.bat --list-ports     # identify serial devices; no upload
 .\upload-firmware.bat --dry-run       # print allowlisted files; no COM use
-.\update-and-upload.bat --port COM7  # use COM7 when multiple possible adapters
+.\upload-firmware.bat --port COM7  # use COM7 when multiple possible adapters
 .\upload-firmware.bat --force --port COM7     # rewrite all tracked files
 .\upload-firmware.bat --no-reset --port COM7  # verify files, do not restart
 ```
 
-Automatic port selection is intentionally conservative: it considers common Espressif, CP210x, CH340/CH9102 and FTDI USB-serial devices. If multiple eligible ports exist, it stops and requires an explicit `--port COMx` to prevent uploading to the wrong adapter. The identified board is then checked through the serial MicroPython REPL; anything other than **ESP32-S3 MicroPython** is rejected **before writing files**. A generic USB-UART adapter ID cannot by itself prove the attached board is ESP32-S3.
+The uploader **always shows a numbered COM-port menu**. It recommends native Espressif USB ahead of generic CP210x, CH340/CH9102 or FTDI bridges. Press Enter to accept the highlighted default, type a number/COMx to override, or Q to cancel. If no recognized USB adapter exists, no automatic default is offered. `--port COMx` bypasses the menu when explicitly needed. The identified board is then checked through the serial MicroPython REPL; anything other than **ESP32-S3 MicroPython** is rejected **before writing files**. A generic USB-UART adapter ID cannot by itself prove the attached board is ESP32-S3.
 
 ## Upload tracking
 
 `firmware-manifest.json` is the **single allowlist**. It explicitly tracks the on-device Python scripts (and later static web assets). Windows `.bat` files, desktop tests, `docs/`, `.github/`, `.git/`, and secrets are **never uploaded**. The tool calculates local SHA-256 hashes and compares each to the **actual MCU filesystem contents**, so it detects modified or missing files without trusting a stale local cache. The upload order places `main.py` last. It verifies *all* tracked remote file checksums before resetting. No device files are silently deleted, even if removed from the manifest.
 
-**Developer maintenance rule:** When adding, renaming or deleting any runtime module in `app/`, `drivers/` or `services/`, update `firmware-manifest.json` **in the same commit**. The CI test `test_real_repository_runtime_modules_all_in_manifest` fails if runtime `.py` files are omitted or obsolete. The batch files and uploader must be revised if the deployment process itself changes. The user continues to use the **same fixed command** after every merge/push to `main`.
+**Developer maintenance rule:** When adding, renaming or deleting any runtime module in `app/`, `drivers/` or `services/`, update `firmware-manifest.json` **in the same commit**. The CI test `test_real_repository_runtime_modules_all_in_manifest` fails if runtime `.py` files are omitted or obsolete. The single BAT launcher and underlying Python uploader must be revised if the deployment process changes. The user continues to use the **same fixed command** after every merge/push to `main`.
 
 ## Safe troubleshooting
 

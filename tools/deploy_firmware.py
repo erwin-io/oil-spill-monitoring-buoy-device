@@ -98,6 +98,66 @@ def choose_port(ports, requested=None):
     raise DeployError("Multiple eligible serial ports: " + ", ".join(matches) + ". Use --port COMx")
 
 
+
+def recommended_port(ports):
+    """Favor ESP32-specific USB interfaces but never skip the board identity probe."""
+    eligible = candidate_ports(ports)
+    if not eligible:
+        return None
+
+    def rank(name):
+        entry = next(p for p in ports if str(getattr(p, "device", "")).upper() == name)
+        vid = getattr(entry, "vid", None)
+        pid = getattr(entry, "pid", None)
+        desc = (getattr(entry, "description", "") or "").lower()
+        score = (3 if vid == 0x303A else
+                 2 if "esp32" in desc or "espressif" in desc else
+                 1 if (vid, pid) in KNOWN_USB_IDS else 0)
+        return (-score, int(name[3:]))
+
+    return min(eligible, key=rank)
+
+
+def prompt_port(ports, *, input_fn=input, say=print):
+    """Always list COM ports. Enter accepts the smart suggested default."""
+    entries = {}
+    for entry in ports:
+        name = str(getattr(entry, "device", "")).upper()
+        if PORT_RE.fullmatch(name) and name not in entries:
+            entries[name] = entry
+    if not entries:
+        raise DeployError("No COM ports detected. Check your USB data cable and driver.")
+    names = sorted(entries, key=lambda name: int(name[3:]))
+    suggested = recommended_port(list(entries.values()))
+    say("Available COM ports (recommended selection marked *):")
+    for index, name in enumerate(names, 1):
+        item = entries[name]
+        # Reject terminal control characters in USB-provided descriptions.
+        desc = "".join(c if 32 <= ord(c) <= 126 else " " for c in
+                       str(getattr(item, "description", "") or "Unknown serial device"))[:75].strip()
+        label = " * RECOMMENDED" if name == suggested else ""
+        say("  [{}] {} - {}{}".format(index, name, desc, label))
+    if suggested:
+        say("Default: {}. Press Enter to use it, or type a number/COM port.".format(suggested))
+    else:
+        say("No reliable USB match; select a port number/COM name explicitly.")
+    for _ in range(3):
+        try:
+            response = input_fn("Select COM port [Enter = default, Q = cancel]: ").strip().upper()
+        except (EOFError, KeyboardInterrupt):
+            raise DeployError("Port selection cancelled; nothing uploaded") from None
+        if response in ("Q", "QUIT", "EXIT"):
+            raise DeployError("Port selection cancelled; nothing uploaded")
+        if response == "" and suggested:
+            return suggested
+        if response.isascii() and response.isdigit() and 1 <= int(response) <= len(names):
+            return names[int(response) - 1]
+        if response in entries:
+            return response
+        say("Invalid choice. Type a listed number, COMx, or Q to cancel.")
+    raise DeployError("Too many invalid choices; nothing uploaded")
+
+
 def parse_probe(text):
     for line in text.splitlines():
         line = line.strip()
@@ -177,7 +237,7 @@ def run_mpremote(port, *commands, runner=subprocess.run, root=ROOT, timeout=75):
 def check_clean_firmware(root, files, runner=subprocess.run):
     # For the pull-and-upload path, reject working tree/index edits to firmware.
     try:
-        res = runner(["git", "status", "--porcelain", "--", *files, "firmware-manifest.json", "tools/deploy_firmware.py", "upload-firmware.bat", "update-and-upload.bat"], cwd=root, capture_output=True, text=True, timeout=15, check=False)
+        res = runner(["git", "status", "--porcelain", "--", *files, "firmware-manifest.json", "tools/deploy_firmware.py", "upload-firmware.bat"], cwd=root, capture_output=True, text=True, timeout=15, check=False)
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise DeployError("Cannot validate Git firmware state") from exc
     if res.returncode != 0:
@@ -236,7 +296,7 @@ def ensure_mpremote():
 
 def main(argv=None, *, root=ROOT):
     p = argparse.ArgumentParser(description="Upload only tracked BlueGuard firmware to ESP32-S3; verify SHA-256 and restart")
-    p.add_argument("--port", help="Select explicit serial port (e.g. COM7); otherwise conservative auto detection")
+    p.add_argument("--port", help="Select COMx directly without the numbered interactive prompt")
     p.add_argument("--list-ports", action="store_true", help="Show connected serial ports without uploading")
     p.add_argument("--dry-run", action="store_true", help="Validate and list local manifest only; no serial access")
     p.add_argument("--force", action="store_true", help="Re-upload all manifest files even if checksums match")
@@ -256,8 +316,9 @@ def main(argv=None, *, root=ROOT):
             return 0
         check_clean_firmware(root, files)
         ensure_mpremote()
-        port = choose_port(list_ports(), args.port)
-        print("Port: " + port)
+        connected = list_ports()
+        port = choose_port(connected, args.port) if args.port else prompt_port(connected)
+        print("Selected port: " + port)
         changed = perform_deploy(root, files, port, force=args.force, no_reset=args.no_reset)
         print("SUCCESS: {} file(s) uploaded; zero unrelated files changed".format(len(changed)))
         return 0
