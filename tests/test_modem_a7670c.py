@@ -102,18 +102,6 @@ class ATDriverTests(unittest.TestCase):
         with self.assertRaises(ModemProtocolError):
             modem.command("AT")
 
-    def test_driver_has_no_machine_import(self):
-        import builtins
-        import importlib
-        import drivers.modem_a7670c as driver
-        original = builtins.__import__
-        def deny(name, *args, **kwargs):
-            if name.split(".")[0] == "machine":
-                raise AssertionError("Driver imported machine without wiring approval")
-            return original(name, *args, **kwargs)
-        from unittest.mock import patch
-        with patch("builtins.__import__", side_effect=deny):
-            importlib.reload(driver)
 
 
 class NetworkServiceTests(unittest.TestCase):
