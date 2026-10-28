@@ -58,3 +58,7 @@ The uploader **always shows a numbered COM-port menu**. It recommends native Esp
 ## Security/physical limitations
 
 This is a **file synchronizer for an existing MicroPython installation**, not an OTA updater, secure provisioning tool, firmware flash programmer or production deployment mechanism. Transfers occur over physical serial and are not transactional across multiple files; a power failure during upload can leave mixed revisions. It never uploads device keys or secret configuration files. The Stage 1 `UNCONFIGURED` state is a software startup result, not validation of GPIO/pump electrical safety. No physical device outcome has been tested yet.
+
+## CH343 COM15 upload troubleshooting (October 28, 2026)
+
+A physical ESP32-S3 on COM15 was identified successfully via CH343 USB serial while Thonny displayed Local Python 3. The subsequent generic exit-1 error occurred **after identity probing**, so a COM conflict is not established. The uploader now recognizes the WCH CH343 (VID 1A86, PID 55D3), uses portable MicroPython hashing with binascii.hexlify(), and identifies each failed serial phase without leaking raw board output. To retry, use only upload-firmware.bat, press Enter to confirm the recommended COM15, and provide the first DEPLOY FAILED line if an error remains. Do not erase or reflash the board to address a firmware-file transfer error.

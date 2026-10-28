@@ -23,6 +23,8 @@ KNOWN_USB_IDS = {
     (0x303A, 0x0002),  # Espressif native USB serial variant
     (0x10C4, 0xEA60),  # CP210x USB-UART
     (0x1A86, 0x7523),  # CH340
+    (0x1A86, 0x55D3),  # CH343
+    (0x1A86, 0x55D2),  # CH342
     (0x1A86, 0x55D4),  # CH9102
     (0x0403, 0x6001),  # FTDI USB-UART
 }
@@ -76,7 +78,7 @@ def candidate_ports(ports):
         vid = getattr(p, "vid", None)
         pid = getattr(p, "pid", None)
         description = (getattr(p, "description", "") or "").lower()
-        if PORT_RE.fullmatch(dev) and ((vid, pid) in KNOWN_USB_IDS or "esp32" in description or "espressif" in description):
+        if PORT_RE.fullmatch(dev) and ((vid, pid) in KNOWN_USB_IDS or "esp32" in description or "espressif" in description or "ch343" in description):
             found.append(dev.upper())
     return sorted(set(found), key=lambda s: int(s[3:]))
 
@@ -192,7 +194,11 @@ def parse_hashes(text, files):
 def remote_hash_program(files):
     # This script runs on the MCU. It is read-only; no filesystem mutations.
     return "\n".join([
-        "import os, hashlib, json",
+        "import os, json, binascii",
+        "try:",
+        "    import hashlib",
+        "except ImportError:",
+        "    import uhashlib as hashlib",
         "_bg_hashes = {}",
         "for _bg_file in " + repr(files) + ":",
         "    try:",
@@ -202,7 +208,7 @@ def remote_hash_program(files):
         "                _bg_chunk = _bg_stream.read(1024)",
         "                if not _bg_chunk: break",
         "                _bg_sha.update(_bg_chunk)",
-        "        _bg_hashes[_bg_file] = _bg_sha.digest().hex()",
+        "        _bg_hashes[_bg_file] = binascii.hexlify(_bg_sha.digest()).decode()",
         "    except OSError:",
         "        _bg_hashes[_bg_file] = None",
         "print('" + HASH_START + "')",
@@ -222,15 +228,35 @@ def remote_mkdir_program(directories):
     ])
 
 
-def run_mpremote(port, *commands, runner=subprocess.run, root=ROOT, timeout=75):
+def safe_serial_exception(stdout, stderr):
+    """Return only an exception class; raw serial text might disclose credentials."""
+    kinds = ("ImportError", "ModuleNotFoundError", "AttributeError",
+             "SyntaxError", "TypeError", "ValueError", "OSError",
+             "FileNotFoundError", "MemoryError", "NotImplementedError",
+             "PermissionError")
+    for line in reversed((stderr + "\n" + stdout).splitlines()):
+        line = line.strip()
+        for kind in kinds:
+            if line == kind or line.startswith(kind + ":"):
+                return kind
+    return None
+
+
+def run_mpremote(port, *commands, runner=subprocess.run, root=ROOT, timeout=75,
+                 stage="Serial operation"):
     command = [sys.executable, "-m", "mpremote", "connect", port, *commands]
     try:
         result = runner(command, cwd=root, capture_output=True, text=True, timeout=timeout, check=False)
     except (OSError, subprocess.TimeoutExpired) as exc:
-        raise DeployError("Serial operation failed or timed out. Close Thonny's connection and retry. " + str(exc)) from exc
+        raise DeployError(stage + " timed out/failed on " + port +
+                          ". Check USB cable and whether Thonny owns the port.") from exc
     if result.returncode != 0:
-        # mpremote can return sensitive text from future applications; don't print raw subprocess output.
-        raise DeployError("Serial command failed (exit " + str(result.returncode) + "). Ensure Thonny releases " + port + " and MicroPython is responding.")
+        # Never print raw stdout/stderr: the firmware could output device secrets.
+        kind = safe_serial_exception(result.stdout or "", result.stderr or "")
+        reason = " [device " + kind + "]" if kind else ""
+        raise DeployError(stage + " failed on " + port + " (exit " +
+                          str(result.returncode) + ")" + reason +
+                          ". No intentional device restart.")
     return result.stdout
 
 
@@ -247,24 +273,28 @@ def check_clean_firmware(root, files, runner=subprocess.run):
 
 
 def perform_deploy(root, files, port, *, force=False, no_reset=False, runner=subprocess.run, say=print):
-    def mp(*arguments):
-        return run_mpremote(port, *arguments, runner=runner, root=root)
+    def mp(stage, *arguments):
+        return run_mpremote(port, *arguments, runner=runner, root=root, stage=stage)
 
-    machine = parse_probe(mp("exec", "import sys,os; print('" + PROBE_MARKER + "' + sys.implementation.name + '|' + os.uname().machine)"))
+    say("[1/5] Verifying MicroPython board identity...")
+    machine = parse_probe(mp("Board identity", "exec", "import sys,os; print('" + PROBE_MARKER + "' + sys.implementation.name + '|' + os.uname().machine)"))
     say("Verified board: " + machine + " on " + port)
+    say("[2/5] Comparing board files with firmware manifest...")
     expected = fingerprint(root, files)
-    observed = parse_hashes(mp("exec", remote_hash_program(files)), files)
+    observed = parse_hashes(mp("Reading board file checksums", "exec", remote_hash_program(files)), files)
     changed = [name for name in files if force or observed[name] != expected[name]]
     # Never restart main.py in the middle of the update.
     changed = [name for name in changed if name != "main.py"] + (["main.py"] if "main.py" in changed else [])
     if changed:
+        say("[3/5] Uploading {} missing/modified files...".format(len(changed)))
         dirs = sorted({"/".join(name.split("/")[:i]) for name in changed for i in range(1, len(name.split("/")))}, key=lambda p: (p.count("/"), p))
         if dirs:
-            mp("exec", remote_mkdir_program(dirs))
+            mp("Preparing device folders", "exec", remote_mkdir_program(dirs))
         for index, name in enumerate(changed, 1):
             say("Uploading {}/{}: {}".format(index, len(changed), name))
-            mp("fs", "cp", name, ":/" + name)
-        verified = parse_hashes(mp("exec", remote_hash_program(files)), files)
+            mp("Uploading " + name, "fs", "cp", name, ":/" + name)
+        say("[4/5] Verifying device file SHA-256...")
+        verified = parse_hashes(mp("Verifying device checksums", "exec", remote_hash_program(files)), files)
         failed = [name for name in files if verified[name] != expected[name]]
         if failed:
             raise DeployError("Upload verification failed for: " + ", ".join(failed) + "; board not intentionally restarted")
@@ -272,7 +302,8 @@ def perform_deploy(root, files, port, *, force=False, no_reset=False, runner=sub
     else:
         say("Already synchronized: all {} firmware files".format(len(files)))
     if not no_reset:
-        mp("soft-reset")
+        say("[5/5] Requesting MicroPython soft reset...")
+        mp("Restarting MicroPython", "soft-reset")
         say("Device soft-reset requested; main.py should start. Reconnect Thonny to monitor its Shell.")
     else:
         say("--no-reset selected; main.py was not restarted")

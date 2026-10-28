@@ -219,6 +219,48 @@ class SerialSelectionTests(unittest.TestCase):
     def test_repository_has_only_one_batch_launcher(self):
         self.assertEqual([p.name for p in d.ROOT.glob("*.bat")], ["upload-firmware.bat"])
 
+
+    def test_ch343_is_suggested_automatically(self):
+        ports = [self.fake_port("COM15", 0x1A86, 0x55D3, "USB-Enhanced-SERIAL CH343 (COM15)")]
+        self.assertEqual(d.recommended_port(ports), "COM15")
+        transcript = []
+        self.assertEqual(d.prompt_port(ports, input_fn=lambda _: "", say=transcript.append), "COM15")
+        self.assertTrue(any("RECOMMENDED" in line for line in transcript))
+
+    def test_remote_hash_source_uses_micropython_hexlify(self):
+        script = d.remote_hash_program(["boot.py", "main.py"])
+        compile(script, "<remote>", "exec")
+        self.assertIn("binascii.hexlify(_bg_sha.digest()).decode()", script)
+        self.assertIn("import uhashlib as hashlib", script)
+        self.assertNotIn(".digest().hex()", script)
+
+    def test_serial_failure_shows_stage_without_secret_details(self):
+        def broken(cmd, **kwargs):
+            return subprocess.CompletedProcess(cmd, 1, "",
+                                                "Traceback\nImportError: hidden_secret_value")
+        with self.assertRaises(d.DeployError) as caught:
+            d.run_mpremote("COM15", "exec", "pass", runner=broken,
+                           root=Path("."), stage="Reading board file checksums")
+        self.assertIn("Reading board file checksums", str(caught.exception))
+        self.assertIn("ImportError", str(caught.exception))
+        self.assertNotIn("hidden_secret_value", str(caught.exception))
+
+    def test_serial_copy_failure_identifies_file_not_sensitive_stderr(self):
+        def broken(cmd, **kwargs):
+            return subprocess.CompletedProcess(cmd, 1, "", "OSError: sensitive_path")
+        with self.assertRaises(d.DeployError) as caught:
+            d.run_mpremote("COM15", "fs", "cp", "main.py", ":/main.py",
+                           runner=broken, root=Path("."), stage="Uploading main.py")
+        self.assertIn("Uploading main.py", str(caught.exception))
+        self.assertNotIn("sensitive_path", str(caught.exception))
+
+    def test_upload_reports_major_stages(self):
+        runner = FakeMpremoteRunner(self.root)
+        log = []
+        d.perform_deploy(self.root, self.files, "COM15", runner=runner, say=log.append)
+        for stage in ("[1/5]", "[2/5]", "[3/5]", "[4/5]", "[5/5]"):
+            self.assertTrue(any(stage in line for line in log), stage)
+
     def test_missing_manual_port_rejected(self):
         with self.assertRaises(d.DeployError):
             d.choose_port([], "COM7")

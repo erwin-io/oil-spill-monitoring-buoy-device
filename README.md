@@ -26,7 +26,7 @@ py -3 -m pip install -r tools\requirements-deploy.txt
 .\upload-firmware.bat
 ```
 
-The Windows tool safely pulls main, checks serial identity, uploads **only changed files** from `firmware-manifest.json`, verifies on-device SHA-256 and requests a MicroPython soft reset. You must **release Thonny's COM port before running** the command, then reconnect Thonny to inspect the Shell. **No hardware deployment has yet been physically tested**; start with loads disconnected. The tool **always displays a numbered list of COM ports**, with a recommended default. Press Enter to accept or enter a number. Use `--port COM7` to bypass the prompt.
+The Windows tool safely pulls main, recognizes WCH CH343 adapters, checks serial identity, uploads **only changed files** from `firmware-manifest.json`, verifies on-device SHA-256 and requests a MicroPython soft reset. You must **release Thonny's COM port before running** the command, then reconnect Thonny to inspect the Shell. **No hardware deployment has yet been physically tested**; start with loads disconnected. The tool **always displays a numbered list of COM ports**, with a recommended default. Press Enter to accept or enter a number. Use `--port COM7` to bypass the prompt.
 
 Full instructions: [Windows upload + Thonny guide](docs/DEPLOYMENT_THONNY.md).
 
