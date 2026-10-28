@@ -4,8 +4,9 @@ Requires a backend-registered device ID and its one-time-issued upload key.
 Never accepts a mobile claimCode in place of the deviceKey. Never prints keys.
 Example:
   py -3 tools/factory_provision.py --port COM15 --device-id buoy_001 \
-      --api-host YOUR_VERIFIED_HOST --ca-der C:\path\to\trusted-root.der
-The protected claim QR is generated separately from the backend claimCode.
+      --api-host YOUR_VERIFIED_HOST --ca-der C:\\trusted\\root-ca.der
+The QR v2 customer label contains ONLY the factory-registered fixed deviceId;
+no long-term deviceKey, claimCode or session secret is permitted in QR.
 """
 import argparse
 import getpass

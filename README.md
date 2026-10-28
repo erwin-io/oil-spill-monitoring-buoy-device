@@ -70,7 +70,7 @@ The training script requires physical samples and groups by independent experime
 
 ## Device cloud pairing core
 
-services/cloud_pairing.py implements the strict server challenge/confirmation state machine using injected certified HTTPS transport, device identity, clock and a physical PAIR event. It cannot start pairing over the setup AP or without a genuine PAIR input. It is currently **not activated by main.py** because real A7670C HTTPS/certificate verification, secure deviceKey provisioning and a verified PAIR button are not complete. This is not yet mobile-app acceptance.
+services/cloud_pairing.py implements QR v2 (mobile creates intent first, physical PAIR triggers device-authenticated protocol-2 challenge, device confirms matching intent/challenge/nonce, and Firebase commits ownership). On MicroPython, main.py instantiates the cellular runtime automatically after factory credentials, CA and APN exist. Desktop CI cannot prove physical LTE, device auth, button electrical wiring or real ownership confirmation.
 
 
 ## Production pairing integration boundary
@@ -81,3 +81,8 @@ The firmware includes the new physical_pair_button, device_identity and cloud_pa
 ## Autonomous LTE and app pairing
 
 The firmware now includes UART-to-PPP cellular dial, certificate/hostname-verifying HTTPS, physical PAIR input, cloud challenge/confirmation and actual health posting, with boot-time automatic initialization after factory device identity and reviewed trust anchor provisioning. Hardware acceptance is pending. See docs/CELLULAR_PAIRING.md.
+
+
+## QR v2 mobile pairing — firmware/software milestone
+
+The API and Android app now use JSON `{"v":2,"deviceId":"BG-000124"}` as a **public ID-only QR**, and protocol=2 challenge/confirmation over A7670C LTE. The device never reads/scans QR; the phone creates a short-lived pair intent; a **real GPIO15 PAIR event** asks the API to bind a challenge to that specific pending intent. The device submits `protocol`, `intentId`, `challengeId`, and a private nonce; it reports CONFIRMED **only** after the matching authenticated API response. During unknown confirmation outcome, status is UNVERIFIED rather than a fabricated successful claim. Serial diagnostics expose sanitized state names only. Do not paste the QR example into an online generator using any private key (the example contains only the public ID). See [QR v2 firmware acceptance](docs/CELLULAR_PAIRING.md).

@@ -59,3 +59,8 @@ Implemented debounced active-low PAIR input adapter with boot-held safety and st
 ## LTE + cloud live implementation increment
 
 Added UART PPP modem driver, CA/hostname-verified MicroPython SSL HTTPS transport, autonomous cellular runtime, real health uploading, factory provisioning CLI, and physical PAIR integration. All require physical board testing and valid backend credentials before checklist completion. The default local runtime stays active if credentials or cellular connection are unavailable.
+
+
+## D41–44 — QR v2 protocol compatibility (2026-10-29)
+
+The authoritative API and Mobile QR v2 handoff supersedes earlier v1 claimCode references in this historical progress file. CloudPairing now requires a real physical button event, sends `{"protocol":2}`, validates deviceId + intentId + challengeId + nonce + server expiry, submits exact protocol-2 confirmation, and fails closed on conflict, ownership ambiguity, expired/malformed data, API authorization failures and replay. It retries only transient responses within the server deadline. Serial logs publish state transitions without credentials. The factory deviceKey and trusted CA are separate from QR content. Software automated tests/CI do not establish actual A7670C or physical button acceptance. Module E remains independent.

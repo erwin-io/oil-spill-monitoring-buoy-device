@@ -37,3 +37,8 @@ Tests test_pair_button.py validate physical debouncing, boot-held button safety,
 
 
 Additional offline tests exercise the UART LTE registration/APN dial and PPP, HTTPS TLS cert/hostname parameters and redirect refusals, HTTP response framing, and missing factory credentials. Hardware pairing acceptance must still be completed using the actual ESP32 and mobile app.
+
+
+## QR v2 physical PAIR software verification
+
+`tests/test_cloud_pairing.py` tests exact protocol-2 JSON, authenticated headers, no calls before physical PAIR, wrong device IDs, cross-session correlation, missing intents, competing phone conflict, expiry/UTC plausibility, 429 Retry-After, lost server success (UNVERIFIED), timeout/retry with the same nonce, forbidden/disabled/wrong nonce paths and secret-free status. The production mobile creates intents independently, never through the firmware. Firmware CI runs desktop fakes; actual TLS trust rejection, A7670C UART, PPP registration, GPIO15 electrical behavior and Firebase owner assignment need hardware/operator evidence.

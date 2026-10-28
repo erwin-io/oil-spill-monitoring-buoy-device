@@ -95,6 +95,7 @@ def serve_forever(board=None, settings=None, hardware=None, clock=None,
                 output("BlueGuard cellular setup unavailable | " + type(exc).__name__)
     CLOUD = cloud_service
     cloud_status = None
+    pairing_status = None
     if (pairing_service is None) != (pair_input is None):
         # Never activate a pairing service without a genuine physical input.
         raise ValueError("Pairing requires physical input and certified transport")
@@ -107,6 +108,11 @@ def serve_forever(board=None, settings=None, hardware=None, clock=None,
                     if CLOUD.status != cloud_status:
                         cloud_status = CLOUD.status
                         output("BlueGuard cellular | " + cloud_status)
+                    # Console-only status; never expose the nonce or deviceKey.
+                    current_pairing = CLOUD.snapshot().get("pairing")
+                    if current_pairing and current_pairing != pairing_status:
+                        pairing_status = current_pairing
+                        output("BlueGuard pairing | " + pairing_status)
                 except Exception as exc:
                     output("BlueGuard cellular fault | " + type(exc).__name__)
             if pairing_service is not None:

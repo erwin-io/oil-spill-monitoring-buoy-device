@@ -150,10 +150,17 @@ class VerifiedHttpsTransport:
             result=json.loads(body.decode()) if body else {}
             if not isinstance(result,dict):
                 raise TransportError("Unexpected API JSON")
-            return {"status":code,"body":result,
-                    "code":result.get("code") or (
-                        result.get("error",{}).get("code")
-                        if isinstance(result.get("error"),dict) else None)}
+            response={"status":code,"body":result,
+                      "code":result.get("code") or (
+                          result.get("error",{}).get("code")
+                          if isinstance(result.get("error"),dict) else None)}
+            if code==429:
+                retry=response_headers.get("retry-after","")
+                if retry.isdigit():
+                    seconds=int(retry)
+                    if 1<=seconds<=300:
+                        response["retryAfter"]=seconds
+            return response
         except TransportError:
             raise
         except Exception:

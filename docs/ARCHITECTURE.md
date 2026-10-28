@@ -5,7 +5,7 @@
 - ESP32-S3 N16R8 + MicroPython; simple app/ / drivers/ / services/ separation. Hardware-free boot/entrypoint execution and a verified 13-file upload succeeded on the physical ESP32-S3 via COM15 CH343; new D41 code remains offline-only until physically tested.
 - Temporary physically authorized Wi-Fi AP with browser setup is approved **for a later stage**, not implemented here.
 - SETUP action is distinct from PAIR and reset. Provisional pin assignments are now recorded for audit only; no electrical wiring approval or device-driver activation exists.
-- Protected internal QR (deviceId + claimCode), physical PAIR, five-minute server challenge/nonce and cloud-only Owner assignment remain mandatory. No local AP/setup access can confer ownership.
+- QR v2 has **public fixed deviceId only**, physical PAIR, five-minute server-intent/challenge/nonce and cloud-only atomic Owner assignment. No claimCode is used in the new mobile journey; legacy v1 API remains only for older clients during migration. Local AP/setup access never confers ownership.
 - USB provisioning with secrets outside Git is a development direction only; production flash encryption, secure boot and recovery require separate review.
 
 ## Dependency architecture
@@ -73,3 +73,8 @@ services/cloud_pairing.py implements contract-level 5-min PAIR challenge and ser
 
 
 Physical PAIR input and cloud pairing are injected jointly; main.serve_forever() rejects one without the other. Factory credential format is separate from the setup AP and firmware manifest. Certificate-validated A7670C HTTPS, device credential provisioning/flash encryption and real GPIO/button integration remain gating steps.
+
+
+## QR v2 contract integration (2026-10-29)
+
+The canonical firmware-to-API contract is `oil-spill-monitoring-buoy-api/docs/QR_V2_DEVICE_PAIRING_CONTRACT.md`. The phone creates a Firebase-authenticated intent; only a local debounced GPIO15 event triggers a device-authenticated `{"protocol":2}` challenge over LTE. The API returns `protocol, deviceId, intentId, challengeId, nonce, expiresAt`; firmware validates version, correlation, 32–128-character secret, bounded expiry against synchronized UTC, then submits `protocol, intentId, challengeId, nonce` and checks the exact successful confirmation response. A lost success response is UNVERIFIED, never inferred from ALREADY_OWNED. No QR reader, claimCode or arbitrary phone command exists in the device service. No secret may be printed. This is a software milestone only, not physical pairing acceptance.
