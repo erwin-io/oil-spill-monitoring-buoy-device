@@ -4,7 +4,7 @@
 
 - ESP32-S3 N16R8 + MicroPython; simple app/ / drivers/ / services/ separation. The source is designed to be compatible with constrained MicroPython, but there has been no board compatibility test.
 - Temporary physically authorized Wi-Fi AP with browser setup is approved **for a later stage**, not implemented here.
-- SETUP action is distinct from PAIR and reset; no GPIO assignments have been authorized.
+- SETUP action is distinct from PAIR and reset. Provisional pin assignments are now recorded for audit only; no electrical wiring approval or device-driver activation exists.
 - Protected internal QR (deviceId + claimCode), physical PAIR, five-minute server challenge/nonce and cloud-only Owner assignment remain mandatory. No local AP/setup access can confer ownership.
 - USB provisioning with secrets outside Git is a development direction only; production flash encryption, secure boot and recovery require separate review.
 
@@ -32,7 +32,7 @@ Shared services consume small duck-typed methods: set_safe_outputs(), read_measu
 5. With a fake safe board and separately validated cloud and hardware configuration, the state is SAFE_IDLE; this is a software-only result.
 6. Initialization exceptions, invalid cloud configuration or invalid hardware configuration transition to FAULT without enabling operations.
 
-The centralized config.py holds BOARD_CONFIG and A7670C_CONFIG, separate from the unchanged DEFAULT_CONFIG cloud schema. GPIO pins are unassigned, and enabling the A7670C is rejected until its actual driver and physical wiring are verified. Config validation does not initialize UARTs or pins.
+The centralized config.py contains disabled, provisional 23-GPIO assignments for A7670C, AS7341, DS3231, microSD, pumps, valves, UV, separate buttons, battery/solar ADC and optional leak/flow/card-detect inputs; the strict API-facing DEFAULT_CONFIG remains unchanged. Hardware validation checks collision/reserved-pin constraints and rejects enabling any component. It does not initialize UART/I2C/SPI or GPIO. See docs/HARDWARE_MAPPING.md.
 
 Physical fail-safe actuator wiring, modem power delivery, RTC, microSD, secure storage and real watchdog operation are *not verified*.
 

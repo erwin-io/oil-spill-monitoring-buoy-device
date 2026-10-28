@@ -34,7 +34,7 @@ Full instructions: [Windows upload + Thonny guide](docs/DEPLOYMENT_THONNY.md).
 
 - `boot.py`: passive startup; no GPIO initialization.
 - `main.py`: explicit cloud/hardware configuration injection and safe unconfigured default.
-- `config.py`: **single non-secret configuration location**, with `BOARD_CONFIG`, `A7670C_CONFIG` and the unchanged API-only `DEFAULT_CONFIG` (strictly separate validators). Pins remain unassigned; modem disabled.
+- `config.py`: **single non-secret configuration location** with a provisional **23-GPIO map** for modem, optics, RTC, SD, pumps/valves/UV, buttons and battery/solar monitoring. All physical hardware remains disabled. Cloud-only DEFAULT_CONFIG is unchanged. See [Hardware pin audit](docs/HARDWARE_MAPPING.md).
 - `app/`: bootstrap and safe-state orchestration.
 - `drivers/`: fail-closed physical adapter boundary; actual pin mapping pending.
 - `services/`: measurement/health prep, fake-transport API client, and physical-PAIR policy gate.
