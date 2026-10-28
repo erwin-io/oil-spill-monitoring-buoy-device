@@ -136,6 +136,23 @@ class FakeHttps:
         return {"status":201,"body":{"accepted":True}}
 
 class RuntimeTests(unittest.TestCase):
+    def test_resident_loop_runs_cellular_without_manual_commands(self):
+        import main
+        class Service:
+            def __init__(self):
+                self.ticks=0
+                self.status="CLOUD_READY"
+            def tick(self):self.ticks+=1
+            def snapshot(self):return {"cellular":self.status}
+        fake=Service()
+        output=[]
+        state=main.serve_forever(clock=Clock(),max_ticks=3,output=output.append,
+                                 cloud_service=fake)
+        self.assertEqual(fake.ticks,3)
+        self.assertEqual(state["cellular"],"CLOUD_READY")
+        self.assertTrue(any("BlueGuard cellular" in line for line in output))
+
+
     def test_cloud_health_uses_legitimate_schema_and_tls(self):
         net=Connected()
         http=FakeHttps()

@@ -50,6 +50,7 @@ class CellularService:
         self.last_health_ms=None
         self.status="WAITING_FOR_PROVISIONING"
         self.health_count=0
+        self.last_error="NONE"
 
     def _reset_connection(self):
         if self.cellular is not None:
@@ -99,8 +100,12 @@ class CellularService:
                 self.last_retry_ms=now
                 try:
                     self._start()
-                except Exception:
+                except Exception as exc:
+                    previous=self.status
                     self._reset_connection()
+                    self.last_error=("MODEM_REGISTRATION_OR_PPP" if previous=="MODEM_CONNECTING" else
+                                     "CLOCK_NOT_VERIFIED" if previous=="TIME_SYNCING" else
+                                     "CLOUD_INIT_FAILED")
                     self.status="CONNECTIVITY_RETRY_PENDING"
             return
         if self.cellular is None or self.cellular.ppp is None or not self.cellular.ppp.isconnected():
@@ -136,4 +141,5 @@ class CellularService:
     def snapshot(self):
         return {"cellular":self.status,
                 "pairing":self.pair.snapshot()["state"] if self.pair else "INACTIVE",
-                "healthUploadsAccepted":self.health_count}
+                "healthUploadsAccepted":self.health_count,
+                "lastError":self.last_error}

@@ -49,7 +49,7 @@ def provision(port,device_id,host,ca_path,secret):
     ca=pathlib.Path(ca_path).read_bytes()
     identity,profile=plan(device_id,secret,host,ca)
     probe=_run(port,"exec","import sys,os; print('BLUEGUARD_BOARD',sys.implementation.name,os.uname().machine)")
-    if "BLUEGUARD_BOARD micropython" not in probe.lower().replace("blueguard_board","BLUEGUARD_BOARD"):
+    if "blueguard_board micropython" not in probe.lower():
         raise RuntimeError("Target did not identify as MicroPython")
     if "esp32s3" not in probe.lower() and "esp32-s3" not in probe.lower():
         raise RuntimeError("Target is not ESP32-S3")

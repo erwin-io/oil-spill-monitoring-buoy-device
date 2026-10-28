@@ -56,7 +56,7 @@ def serve_forever(board=None, settings=None, hardware=None, clock=None,
     if clock is None:
         clock = SystemClock()
     RUNTIME = FirmwareRuntime(startup, settings, clock)
-    output("Module D services active | sensor=NOT_INSTALLED | modem=NOT_CONNECTED")
+    output("Module D local services active | sensor=NOT_INSTALLED | modem=STARTING_IF_PROVISIONED")
     # AP is created only at real ESP32 MicroPython boot, never in desktop tests.
     # Unconfigured devices may open a short-lived password-protected setup AP.
     if setup_portal is None:
@@ -127,7 +127,7 @@ def serve_forever(board=None, settings=None, hardware=None, clock=None,
             if max_ticks is not None:
                 loops += 1
                 if loops >= max_ticks:
-                    return RUNTIME.snapshot()
+                    return status()
             clock.sleep_ms(250)
     except KeyboardInterrupt:
         output("BlueGuard service stopped by operator; hardware outputs untouched")
