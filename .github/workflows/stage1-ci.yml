@@ -1,4 +1,4 @@
-name: Firmware Stage 1 Desktop Checks
+name: BlueGuard Firmware Offline Checks
 on:
   push:
     branches: ["main"]

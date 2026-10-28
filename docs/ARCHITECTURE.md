@@ -1,8 +1,8 @@
-# Module D — Stage 1 architecture (2026-10-28)
+# Module D — Stage 1 foundation + initial UART implementation (2026-10-28)
 
 ## Approved decisions
 
-- ESP32-S3 N16R8 + MicroPython; simple app/ / drivers/ / services/ separation. The source is designed to be compatible with constrained MicroPython, but there has been no board compatibility test.
+- ESP32-S3 N16R8 + MicroPython; simple app/ / drivers/ / services/ separation. Hardware-free boot/entrypoint execution and a verified 13-file upload succeeded on the physical ESP32-S3 via COM15 CH343; new D41 code remains offline-only until physically tested.
 - Temporary physically authorized Wi-Fi AP with browser setup is approved **for a later stage**, not implemented here.
 - SETUP action is distinct from PAIR and reset. Provisional pin assignments are now recorded for audit only; no electrical wiring approval or device-driver activation exists.
 - Protected internal QR (deviceId + claimCode), physical PAIR, five-minute server challenge/nonce and cloud-only Owner assignment remain mandatory. No local AP/setup access can confer ownership.
@@ -17,6 +17,8 @@
     services.telemetry -> injected measurement_source / clock / id_generator
     services.health    -> injected health_source / clock / id_generator
     services.api_client -> injected transport; no built-in internet client
+    drivers.modem_a7670c -> injected UART and monotonic clock (D41)
+    services.network     -> D42 read-only SIM/CEREG/CSQ/CGATT parser
     services.pairing    -> explicitly physical PAIR action gate only
                            (not a cloud handshake)
     tests/fakes         -> pure Python fake dependencies
@@ -42,9 +44,11 @@ Server implementation remains authoritative for strict request validation. Stage
 
 The server has no named uptime health field. The client-side guard disallows it; raise a separate upstream integration request rather than silently extending payloads.
 
-## Out of scope until separately authorized
+## D41/D42 code added, physical activation still gated
 
-Real A7670C AT commands/TLS, SIM/APN, portal HTML/server, GPIO mapping, secure provisioning storage, persistent SD queue, RTC sync, background sampling, physical pairing/confirmation polling, optical ML, fluidics and deployment. These belong to later stages or other module boundaries. No A/B/C code or official checklist was modified.
+The safe read-only A7670C AT driver now handles injected UART reads/writes, bounded timing, split responses, unsolicited lines, terminal status and errors. The D42 diagnostics parse CPIN/CEREG/CSQ/CGATT into a non-secret status shape. The allowed commands are deliberately restricted to AT, AT+CPIN?, AT+CEREG?, AT+CSQ and AT+CGATT?. It cannot set PIN/APN, initiate attachment or HTTPS. The module imports no machine package and no active physical board is constructed.
+
+Pending implementation/verification: real UART electrical adapter and modem power, SIM/APN and LTE registration management, certificate-verified TLS, setup AP, secure provisioning storage, persistent microSD queue, RTC sync, background sampling, physical pairing/confirmation polling, optical ML and fluidics. No A/B/C code or official checklist was changed.
 
 ## Known software-only limitations
 

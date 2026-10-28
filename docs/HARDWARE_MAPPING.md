@@ -61,3 +61,7 @@ All non-board configs in config.py remain enabled=False. validate_hardware_confi
 - MicroPython SDCard for ESP32-S3 custom pins: https://docs.micropython.org/en/latest/library/machine.SDCard.html
 - SIMCom A7670X hardware design: https://datasheet.lcsc.com/lcsc/2403041653_SIMCom-Wireless-Solutions-A7670C-LNNV_C21264492.pdf
 - Adafruit AS7341 bus breakout reference: https://learn.adafruit.com/adafruit-as7341-10-channel-light-color-sensor-breakout/pinouts
+
+## D41 UART software milestone (2026-10-28)
+
+The new `drivers/modem_a7670c.py` handles a deliberately restricted diagnostic AT-command subset using an injected UART and clock. It neither imports `machine` nor drives PWRKEY or GPIO17/18. `services/network.py` parses only read-only SIM registration, packet attach and signal values; no APN, credentials, TLS or live registration is triggered. This is safe to ship as dormant code, but **not electrically ready to enable**. A 1.8 V raw A7670C UART must not be directly connected to 3.3 V ESP32 pins; confirm the exact carrier board and its level shifting, regulator and PWRKEY drive before beginning actual serial tests.

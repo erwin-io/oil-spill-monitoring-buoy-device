@@ -7,11 +7,13 @@
     "app/__init__.py",
     "app/controller.py",
     "drivers/__init__.py",
+    "drivers/modem_a7670c.py",
     "drivers/unbound.py",
     "services/__init__.py",
     "services/api_client.py",
     "services/contracts.py",
     "services/health.py",
+    "services/network.py",
     "services/pairing.py",
     "services/telemetry.py",
     "main.py"

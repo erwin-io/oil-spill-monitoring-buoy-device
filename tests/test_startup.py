@@ -47,7 +47,8 @@ class StartupTests(unittest.TestCase):
         with patch("builtins.__import__", side_effect=deny):
             for name in ("main", "boot", "config", "app.controller", "drivers.unbound",
                          "services.contracts", "services.telemetry", "services.health",
-                         "services.api_client", "services.pairing"):
+                         "services.api_client", "services.pairing",
+                         "drivers.modem_a7670c", "services.network"):
                 importlib.reload(importlib.import_module(name))
             self.assertEqual(main.run()["state"], "UNCONFIGURED")
 
